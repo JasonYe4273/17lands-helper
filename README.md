@@ -1,6 +1,9 @@
 # 17lands-helper
 Discord bot for scraping 17lands data
 
+## Status
+The bot is currently in development, and is not yet hosted anywhere, so does not work unless I am running it in my testing environment.
+
 ## How to use
 Go to [this link](https://discord.com/api/oauth2/authorize?client_id=890628197664817203&permissions=380104920128&scope=bot) to invite the bot to your server.
 
