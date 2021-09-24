@@ -1,9 +1,10 @@
 import discord
+import os
 import requests
 import time
 from datetime import date, datetime, timedelta
 from discord.ext import tasks
-from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE, TOKEN
+from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE
 from settings import DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID
 
 client = discord.Client()
@@ -330,4 +331,4 @@ def fetch_data(sets):
 
 
 refresh_data.start()
-client.run(TOKEN)
+client.run(os.environ['TOKEN'])
