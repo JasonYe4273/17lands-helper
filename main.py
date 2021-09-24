@@ -59,6 +59,23 @@ def format_data(data):
     else:
         return "{:.2f}".format(data)
 
+def parse_colors(colors_str):
+    if colors_str == 'all':
+        return 'all'
+    colors_exist = {'W': False, 'U': False, 'B': False, 'R': False, 'G': False}
+    for c in colors_str.upper():
+        if c not in colors_exist:
+            return None
+        if colors_exist[c]:
+            return None
+        colors_exist[c] = True
+
+    colors = ''
+    for c in colors_exist:
+        if colors_exist[c]:
+            colors += c
+    return colors
+
 async def data_query(query, channel):
     print(f'Handling data query {query}')
     separator = query.find(DATA_QUERY_MID)
@@ -106,6 +123,7 @@ async def data_query(query, channel):
     start_date = None
     end_date = None
     days = 0
+    colors = None
     for o in options:
         ol = o.lower()
         ou = o.upper()
@@ -148,6 +166,13 @@ async def data_query(query, channel):
             except:
                 pass
 
+        # Deck colors to search
+        elif ol.startswith('-c=') or ol.startswith('colors='):
+            if colors is None:
+                colors = parse_colors(ol[ol.find('=')+1:])
+                if colors is not None and colors != 'all':
+                    can_use_cache = False
+
     if len(formats) == 0:
         formats = [DEFAULT_FORMAT]
     if len(sets) == 0:
@@ -177,6 +202,8 @@ async def data_query(query, channel):
         start_date = START_DATE
 
     query_str = f'&start_date={start_date}&end_date={end_date}'
+    if colors is not None and colors != 'all':
+        query_str += f'&colors={colors}'
     print(query_str)
 
     tables = {}
