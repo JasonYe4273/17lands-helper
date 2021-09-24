@@ -31,12 +31,15 @@ The bot currently responds to the following commands:
             - `drafts`: ALSA and ATA
             - `games`: GP, GD, GIH, GND, and IWD
             - `data`: all of the above
-        - You can specify a time period to query data from. Note that this will result in a slower query, as the data will not be cached, and will need to be fetched from 17lands.
+        - You can specify a time period to query data from. **Note**: this will result in a slower query, as the data will not be cached, and will need to be dynamically fetched from 17lands.
             - `-e=[end]` or `end=[end]` will set the end date to `[end]`. `[end]` must be given in the format `MM-DD-YYYY`. If `[end]` is not specified, it will default to the current day.
             - `-d=[days]` or `days=[days]` will set the number of days in the time period. If the length of the time period is not specified, it will default to querying over all 17lands data.
                 - `-w=[weeks]`, `weeks=[weeks]`, `-m=[months]`, and `months=[months]` function similarly, except a week is 7 days and a month is 30 days. Using multiple flags is additive; `-d=5 -w=1 -m=1` is equivalent to `-d=42`.
+        - You can specify what color decks to query data from. **Note**: this will result in a slower query, as the data will not be cached, and will need to be dynamically fetched from 17lands.
+            - `-c=[colors]` or `colors=[colors]` will set this option. Valid strings for `[colors]` must either be `all` to specify all decks (the default), or any combination and order of the `wubrg` colors. Only the first such valid option will be used.
         - Adding `-v` or `verbose` as an option will cause the query to also return data counts (things like # Games Played) in addition to winrates.
     - Examples
         - `{{jadar "gisa resurrector"}}` will give all data for Jadar, Ghoulcaller of Nephalia and Gisa, Glorious Resurrector.
     	- `{{jadar "gisa resurrector" | drafts gih}}` will give ALSA, ATA, and GIH data for Jadar, Ghoulcaller of Nephalia and Gisa, Glorious Resurrector.
         - `{{jadar "gisa resurrector" | drafts gih -w=2 -e=09-21-2021}}` will give ALSA, ATA, and GIH data for Jadar, Ghoulcaller of Nephalia and Gisa, Glorious Resurrector in the time period of 9/7/2021 to 9/21/2021
+        - `{{jadar "gisa resurrector" | drafts gih -c=ub}}` will give ALSA, ATA, and GIH data for Jadar, Ghoulcaller of Nephalia and Gisa, Glorious Resurrector in UB decks only.
