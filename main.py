@@ -124,6 +124,7 @@ async def data_query(query, channel):
     end_date = None
     days = 0
     colors = None
+    can_use_cache = True
     for o in options:
         ol = o.lower()
         ou = o.upper()
@@ -189,20 +190,26 @@ async def data_query(query, channel):
                 break
     sets = filtered_sets
 
-    can_use_cache = True
+    result_description = ''
+
     if end_date is None:
         end_date = date.today()
-    if end_date == date.today():
+        result_description = f' to today'
+    if end_date != date.today():
         can_use_cache = False
+        result_description = f' to {end_date}'
 
     if days > 0:
         start_date = end_date - timedelta(days=days)
         can_use_cache = False
+        result_description = f' from {start_date}{result_description}'
     else:
         start_date = START_DATE
+        result_description = f' up{result_description}'
 
     query_str = f'&start_date={start_date}&end_date={end_date}'
     if colors is not None and colors != 'all':
+        result_description = f' in {colors} decks{result_description}'
         query_str += f'&colors={colors}'
     print(query_str)
 
@@ -241,7 +248,7 @@ async def data_query(query, channel):
 
         t = tables[c]
 
-        result += f'Data for {c}\n'
+        result += f'Data for {c}{result_description}\n'
         result += '```'
         column_lengths = [0 for _ in t[0]]
         for r in range(len(t)):
