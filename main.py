@@ -1,7 +1,7 @@
 import discord
 import requests
 import time
-from datetime import date
+from datetime import date, timedelta
 from discord.ext import tasks
 from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE, TOKEN
 from settings import DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID
@@ -98,46 +98,114 @@ async def data_query(query, channel):
 
     options = options_query.split(' ')
 
-    # Parse options for formats, sets, and data to query to the right of separator
+    # Parse options to the right of separator
     formats = []
     sets = []
-    data_commands = []
+    data_commands = {}
     verbose = False
+    days = 0
     for o in options:
-        if o.lower() in FORMAT_MAPPING:
-            formats.append(FORMAT_MAPPING[o.lower()])
-        if o.upper() in SETS:
-            sets.append(o.upper())
-        if o.lower() in DATA_COMMANDS:
-            data_commands += DATA_COMMANDS[o.lower()]
-        if o.lower() == 'verbose' or o.lower == '-v':
+        ol = o.lower()
+        ou = o.upper()
+        # Format
+        if ol in FORMAT_MAPPING:
+            formats.append(FORMAT_MAPPING[ol])
+
+        # Sets
+        elif ou in SETS:
+            sets.append(ou)
+
+        # Data commands
+        elif ol in DATA_COMMANDS:
+            for dc in DATA_COMMANDS[ol]:
+                data_commands[dc[0]] = dc
+
+        # Verbose (whether to show # in addition to WR)
+        elif ol == 'verbose' or ol == '-v':
             verbose = True
+
+        # Time period to search
+        elif ol.startswith('months=') or ol.startswith('-m='):
+            try:
+                days += int(ol[ol.find('=')+1:])*30
+            except:
+                pass
+        elif ol.startswith('weeks=') or ol.startswith('-w='):
+            try:
+                days += int(ol[ol.find('=')+1:])*7
+            except:
+                pass
+        elif ol.startswith('days=') or ol.startswith('-d='):
+            try:
+                days += int(ol[ol.find('=')+1:])
+            except:
+                pass
+
+    start_date = None
+    if days > 0:
+        start_date = date.today() - timedelta(days=days)
 
     if len(formats) == 0:
         formats = [DEFAULT_FORMAT]
     if len(sets) == 0:
         sets = SETS
+    if len(data_commands) == 0:
+        for dc in DATA_COMMANDS['data']:
+            data_commands[dc[0]] = dc
+
     print(formats)
     print(sets)
     print(data_commands)
 
-    tables = []
-    for c in cardnames:
-        found = False
-        for s in sets:
+    filtered_sets = []
+    for s in sets:
+        for c in cardnames:
             if c in cache[s][formats[0]]:
+                filtered_sets.append(s)
+                break
+    sets = filtered_sets
+
+    query_str = ''
+    if start_date is not None:
+        query_str += f'&start_date={start_date}&end_date={date.today()}'
+    elif query_str != '':
+        query_str += f'&start_date={START_DATE}&end_date={date.today()}'
+
+    tables = {}
+    for s in sets:
+        data_to_use = {}
+        if query_str == '':
+            data_to_use = cache[s]
+        else:
+            for f in formats:
+                try:
+                    data_to_use[f] = {}
+                    print(f'Fetching data for {s} {f}...')
+                    response = requests.get(
+                        'https://www.17lands.com/card_ratings/data?' +
+                        f'expansion={s}&format={f}{query_str}'
+                    )
+                    for c in response.json():
+                        data_to_use[f][c['name']] = c
+                    print('Success!')
+                except:
+                    await send_message(channel, f'Failed to fetch data for {c} from 17lands')
+        for c in cardnames:
+            if c in data_to_use[formats[0]] and c not in tables:
                 header = [s] + [f for f in formats]
                 table = [[dc_name] + [
-                    format_data(cache[s][f][c][dc]) for f in formats
-                ] for (dc, dc_name, v) in data_commands if not v or verbose]
-                tables.append((c, [header] + table))
-                found = True
-                break
-        if not found:
-            await send_message(channel, f'Cannot find {c} in 17lands data')
+                    format_data(data_to_use[f][c][dc]) for f in formats
+                ] for (dc, dc_name, v) in data_commands.values() if not v or verbose]
+                tables[c] = [header] + table
 
     result = ''
-    for (c, t) in tables:
+    for c in cardnames:
+        if c not in tables:
+            result += f'Cannot find data for {c} in 17lands\n'
+            continue
+
+        t = tables[c]
+
         result += f'Data for {c}\n'
         result += '```'
         column_lengths = [0 for _ in t[0]]
@@ -149,7 +217,7 @@ async def data_query(query, channel):
             result += t[0][c] + (column_lengths[c]+1-len(t[0][c]))*' ' + '| '
         result += '\n'
 
-        result += '-' * (sum(column_lengths) + 2*len(column_lengths)) + '\n'
+        result += '-' * (sum(column_lengths) + 2*len(column_lengths) + 1) + '\n'
 
         for r in range(1, len(t)):
             for c in range(len(t[0])):
@@ -201,7 +269,7 @@ async def on_message(message):
         try:
             response = requests.get(f'https://api.scryfall.com/cards/named?fuzzy={cardname}').json()
             if response['object'] == 'error':
-                if response['details'][:20] == 'Too many cards match':
+                if response['details'].startswith('Too many cards match'):
                     await send_message(message.channel, f'Error: multiple card matches for "{cardname}"')
                 else:
                     await send_message(message.channel, f'Error: cannot find card "{cardname}"')
