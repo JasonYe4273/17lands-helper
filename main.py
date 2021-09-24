@@ -216,12 +216,15 @@ async def data_query(query, channel):
     tables = {}
     for s in sets:
         data_to_use = {}
-        if can_use_cache:
-            data_to_use = cache[s]
-        else:
-            for f in formats:
+        for f in formats:
+            if can_use_cache:
+                data_to_use[f] = cache[s][f]
+            elif f'{f}{query_str}' in cache[s]:
+                data_to_use[f] = cache[s][f'{f}{query_str}']
+            else:
                 try:
                     data_to_use[f] = {}
+                    cache[s][f'{f}{query_str}'] = {}
                     print(f'Fetching data for {s} {f}...')
                     response = requests.get(
                         'https://www.17lands.com/card_ratings/data?' +
@@ -229,6 +232,7 @@ async def data_query(query, channel):
                     )
                     for c in response.json():
                         data_to_use[f][c['name']] = c
+                        cache[s][f'{f}{query_str}'][c['name']] = c
                     print('Success!')
                 except:
                     await send_message(channel, f'Failed to fetch data for {c} from 17lands')
@@ -298,72 +302,6 @@ async def on_message(message):
     command = rest.split(' ')[0]
     rest = rest[len(command):].strip()
 
-    # Old data commands
-    if command in DATA_COMMANDS:
-        # Parse cardname, allowing spaces inside quotes
-        if rest[0] in ['"', "'"] and rest.find(rest[0], 1) != -1:
-            cardname = rest[1:rest.find(rest[0], 1)]
-            rest = rest[rest.find(rest[0], 1)+1:].strip()
-        else:
-            cardname = rest[:rest.find(' ')]
-            rest = rest[rest.find(' ')+1:].strip()
-
-        # Try get unique card from Scryfall
-        try:
-            response = requests.get(f'https://api.scryfall.com/cards/named?fuzzy={cardname}').json()
-            if response['object'] == 'error':
-                if response['details'].startswith('Too many cards match'):
-                    await send_message(message.channel, f'Error: multiple card matches for "{cardname}"')
-                else:
-                    await send_message(message.channel, f'Error: cannot find card "{cardname}"')
-                return
-            else:
-                cardname = response['name']
-        except:
-            await send_message(message.channel, 'Error querying Scryfall')
-            return
-
-        tokens = rest.split(' ')
-
-        # See if any format names were passed in
-        formatname = None
-        for t in tokens:
-            if t.lower() in FORMAT_MAPPING:
-                formatname = FORMAT_MAPPING[t.lower()]
-                break
-        if formatname is None:
-            formatname = DEFAULT_FORMAT
-
-        # See if any set names were passed in
-        setname = None
-        for t in tokens:
-            if t.upper() in SETS:
-                setname = t.upper()
-                break
-        if setname is not None and cardname not in cache[setname][formatname]:
-            # Set name was passed in but no matching card in that set
-            await send_message(message.channel, f'Cannot find {cardname} in 17lands data for {setname}')
-            return
-
-        # If no set names were passed in, try to find a set with the cardname
-        if setname is None:
-            for s in SETS:
-                if cardname in cache[s][formatname]:
-                    setname = s
-        if setname is None:
-            # No card found in any 17lands data
-            await send_message(message.channel, f'Cannot find {cardname} in 17lands data')
-            return
-
-        data = cache[setname][formatname][cardname]
-
-        result = f'Data for {cardname} in {setname} {formatname}:'
-        result += f'\n----------------------------------------------'
-        for (column, name) in DATA_COMMANDS[command]:
-            # Add a line for each data point requested
-            result += f'\n{name}: {data[column]}'
-        await send_message(message.channel, result)
-
 
 @tasks.loop(hours=12)
 async def refresh_data():
@@ -371,6 +309,7 @@ async def refresh_data():
 
 def fetch_data(sets):
     for s in sets:
+        cache[s] = {f: {} for f in FORMATS}
         for f in FORMATS:
             success = False
             while not success:
