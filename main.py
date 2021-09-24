@@ -153,10 +153,6 @@ async def data_query(query, channel):
         for dc in DATA_COMMANDS['data']:
             data_commands[dc[0]] = dc
 
-    print(formats)
-    print(sets)
-    print(data_commands)
-
     filtered_sets = []
     for s in sets:
         for c in cardnames:
@@ -225,7 +221,8 @@ async def data_query(query, channel):
             result += '\n'
         result += '```\n'
 
-    await send_message(channel, result)
+    if result != '':
+        await send_message(channel, result)
 
 
 @client.event
