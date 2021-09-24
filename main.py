@@ -1,7 +1,7 @@
 import discord
 import requests
 import time
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from discord.ext import tasks
 from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE, TOKEN
 from settings import DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID
@@ -103,6 +103,8 @@ async def data_query(query, channel):
     sets = []
     data_commands = {}
     verbose = False
+    start_date = None
+    end_date = None
     days = 0
     for o in options:
         ol = o.lower()
@@ -125,6 +127,11 @@ async def data_query(query, channel):
             verbose = True
 
         # Time period to search
+        elif end_date is None and (ol.startswith('end=') or ol.startswith('-e=')):
+            try:
+                end_date = datetime.strptime(ol[ol.find('=')+1:], '%m-%d-%Y').date()
+            except:
+                pass
         elif ol.startswith('months=') or ol.startswith('-m='):
             try:
                 days += int(ol[ol.find('=')+1:])*30
@@ -140,10 +147,6 @@ async def data_query(query, channel):
                 days += int(ol[ol.find('=')+1:])
             except:
                 pass
-
-    start_date = None
-    if days > 0:
-        start_date = date.today() - timedelta(days=days)
 
     if len(formats) == 0:
         formats = [DEFAULT_FORMAT]
@@ -161,16 +164,25 @@ async def data_query(query, channel):
                 break
     sets = filtered_sets
 
-    query_str = ''
-    if start_date is not None:
-        query_str += f'&start_date={start_date}&end_date={date.today()}'
-    elif query_str != '':
-        query_str += f'&start_date={START_DATE}&end_date={date.today()}'
+    can_use_cache = True
+    if end_date is None:
+        end_date = date.today()
+    if end_date == date.today():
+        can_use_cache = False
+
+    if days > 0:
+        start_date = end_date - timedelta(days=days)
+        can_use_cache = False
+    else:
+        start_date = START_DATE
+
+    query_str = f'&start_date={start_date}&end_date={end_date}'
+    print(query_str)
 
     tables = {}
     for s in sets:
         data_to_use = {}
-        if query_str == '':
+        if can_use_cache:
             data_to_use = cache[s]
         else:
             for f in formats:
