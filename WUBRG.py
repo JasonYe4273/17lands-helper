@@ -1,14 +1,21 @@
 import discord
 
+# Used to populate the emojis which represent mana costs and set symbols.
+# Note, not calling this means no emojis will be found, and embeds will be emojiless.
 MANAMOJIS = []
+SETMOJIS = []
 def cache_manamojis(client):
     global MANAMOJIS
     MANAMOJIS = [emo for emo in client.emojis if emo.name.startswith('mana')]
-    # TODO: Add in support for set symbols.
-    #SETMOJIS = [emo for emo in client.emojis if emo.name.startswith('set')]
     print(f'{len(MANAMOJIS)} manamojis found!')
+    
+    # TODO: Add in support for set symbols.
+    #global SETMOJIS
+    #SETMOJIS = [emo for emo in client.emojis if emo.name.startswith('set')]
+    #print(f'{len(SETMOJIS)} setmojis found!')
 
 ### Colour Mapping ###
+    
 # Groupings of colour-sets supported.
 COLOR_ALIASES_SUPPORT = {
     'Colors': {
@@ -60,6 +67,7 @@ COLOR_ALIASES_SUPPORT = {
     }
 }
 
+# Lists of alais based on the number of colours.
 COLOUR_GROUPINGS = {
     'Mono-Color': ['White', 'Blue', 'Black', 'Red', 'Green'],
     'Two-Color': ['Azorius', 'Orzhov', 'Boros', 'Selesnya', 'Dimir', 'Izzet', 'Simic', 'Rakdos', 'Golgari', 'Gruul'],
@@ -73,13 +81,15 @@ for d in COLOR_ALIASES_SUPPORT:
     COLOR_ALIASES = COLOR_ALIASES | COLOR_ALIASES_SUPPORT[d]
 
 
+# Takes in a string, and attempts to convert it to a color_string.
+# If the string is invalid, returns 'WUBRGC'.
 def get_color_string(s):
     s = s.upper()
 
     if s.title() in COLOR_ALIASES:
         s = COLOR_ALIASES[s.title()]
 
-    #validate the string
+    # Validate the string by using the set difference
     valid_chars = set(COLOR_ALIASES['All'])
     char_set = set(s)
     remainder = char_set - valid_chars
@@ -91,6 +101,8 @@ def get_color_string(s):
     return s
 
 
+# Takes in a valid colour string, or colour string alias,
+# and then returns a dictionary of booleans.
 def get_color_map(color_str):
     s = get_color_string(color_str)
     colors_exist = {'W': False,
@@ -132,11 +144,18 @@ def get_emoji(emoji_str):
     else:
         return str(manamojis[0])
 
+# NOTE: Imcomplete
+# Parses a string mana cost into a list of mana 'elements', while converting
+# from 'curly-brace' format or plain-text format to our list format.
+# Eg. {10}{G}{G} would return ['10', 'G', 'G']
+# Eg. 10GG would return ['1', '0', 'G', 'G'], which is likely not what's wanted.
 def parse_cost(mana_cost):
-    # Parse the mana cost from the {1}{W}{B} format into a list of strings.
+    # TODO: Parse the mana cost from the {1}{W}{B} format into a list of strings.
     return [char for char in mana_cost]
     pass
 
+# Takes a mana cost and attempts to return a string of emojis which
+# represent that mana cost, as it would look on the card.
 def emojify_mana_cost(mana_cost):
     mana_cost = parse_cost(mana_cost)
     cost = ""
@@ -144,6 +163,9 @@ def emojify_mana_cost(mana_cost):
         cost += get_emoji(sym)
     return cost
 
+# Takes a mana cost and attempts to return a string of emojis which
+# represent that teh colours contained in that card.
+# NOTE: Not a true colour_id, potentially worth renaming.
 def emojify_color_id(mana_cost):
     mana_cost = parse_cost(mana_cost)
     pips = ['W', 'U', 'B', 'R', 'G', 'C']

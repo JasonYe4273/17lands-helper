@@ -5,10 +5,10 @@ import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
 
 
-def new_help_embed(title, description = ""):
-    embed = discord.Embed(title=title, description=description, color=discord.Color.red())
-    return embed
 
+### Data Embeds ###
+
+# Returns an emebed object, stylized for data queries.
 def new_data_embed(title, description = "", url = ""):
     embed = discord.Embed(title=title, description=description, color=discord.Color.blue(), url=url)
     # NOTE: Adding in a thumbnail sqiushes the formatting of the embed, which seems to have little way to control it.
@@ -17,7 +17,8 @@ def new_data_embed(title, description = "", url = ""):
     embed.set_footer(text=footer)
     return embed
 
-
+# Returns an embed which displays the game stats about a particular card.
+# NOTE: Unfinished. Needs to be populated with real data.
 def gen_card_embed(card, color_filter = None):
     mana_cost = '1WW'
     name = 'Card Name'
@@ -58,7 +59,8 @@ def gen_card_embed(card, color_filter = None):
 
     return embed
 
-
+# Returns an embed which shows the win rates diffenet colours of decks.
+# NOTE: Unfinished. Needs to be populated with real data.
 def gen_colour_rating_embed():
     embed = new_data_embed(title="Colour Rankings", url="https://www.17lands.com/color_ratings")
 
@@ -76,6 +78,13 @@ def gen_colour_rating_embed():
     return embed
     
 
+
+### Help Embeds ###
+
+# Returns an emebed object, stylized for help calls
+def new_help_embed(title, description = ""):
+    embed = discord.Embed(title=title, description=description, color=discord.Color.red())
+    return embed
 
 # Returns an embed which lists all of the strings which can be parsed into color strings.
 def supported_color_strings():
