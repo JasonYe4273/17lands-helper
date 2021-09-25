@@ -6,6 +6,9 @@ from datetime import date, datetime, timedelta
 from discord.ext import tasks
 from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE
 from settings import DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID
+import WUBRG
+from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
+import embed_maker
 
 client = discord.Client()
 
@@ -43,12 +46,19 @@ DATA_COMMANDS['drafts'] = DATA_COMMANDS['alsa'] + DATA_COMMANDS['ata']
 DATA_COMMANDS['games'] = DATA_COMMANDS['gp'] + DATA_COMMANDS['gnp'] + DATA_COMMANDS['oh'] + DATA_COMMANDS['gd'] + DATA_COMMANDS['gih'] + DATA_COMMANDS['gnd'] + DATA_COMMANDS['iwd']
 DATA_COMMANDS['data'] = DATA_COMMANDS['drafts'] + DATA_COMMANDS['games']
 
+
+
+async def send_embed_message(channel, embed):
+    print(f"Sending embedded message to channel '#{channel}'")
+    await channel.send(embed=embed)
+
 async def send_message(channel, message):
     print(f'Sending message to channel {channel}: {message}')
     await channel.send(message)
 
 @client.event
 async def on_ready():
+    WUBRG.cache_manamojis(client)
     fetch_data(OLD_SETS)
     print('Logged in as {0.user}'.format(client))
 
@@ -331,4 +341,12 @@ def fetch_data(sets):
 
 
 refresh_data.start()
-client.run(os.environ['TOKEN'])
+try:
+    client.run(os.environ['TOKEN'])
+except:
+    # Temporarily let this run locally with my bot token, so I can
+    # check that everything compiles properly. I'll make sure to
+    # remove this later.
+    #    -ZacharyN
+    from LocalToken import TOKEN
+    client.run(TOKEN)
