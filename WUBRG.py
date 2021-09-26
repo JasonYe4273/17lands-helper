@@ -169,6 +169,8 @@ def emojify_mana_cost(mana_cost):
 # represent that teh colours contained in that card.
 # NOTE: Not a true colour_id, potentially worth renaming.
 def emojify_color_id(mana_cost):
+    if mana_cost is None:
+        return ""
     mana_cost = parse_cost(mana_cost)
     pips = ['W', 'U', 'B', 'R', 'G', 'C']
     cost = ""
