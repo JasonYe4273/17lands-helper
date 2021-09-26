@@ -35,7 +35,6 @@ DATA_COMMANDS = {
     'alsa': [('seen_count', '# Seen', True), ('avg_seen', 'ALSA', False)],
     'ata': [('pick_count', '# Taken', True), ('avg_pick', 'ATA', False)],
     'gp': [('game_count', '# GP', True), ('win_rate', 'GP WR', False)],
-    'gnp': [('sideboard_game_count', '# GNP', True), ('sideboard_win_rate', 'GNP WR', False)],
     'oh': [('opening_hand_game_count', '# OH', True), ('opening_hand_win_rate', 'OH WR', False)],
     'gd': [('drawn_game_count', '# GD', True), ('drawn_win_rate', 'GD WR', False)],
     'gih': [('ever_drawn_game_count', '# GIH', True), ('ever_drawn_win_rate', 'GIH WR', False)],
