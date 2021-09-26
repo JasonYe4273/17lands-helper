@@ -28,6 +28,7 @@ def new_data_embed(title, description = "", url = ""):
 
 # Returns an embed which displays the game stats about a particular card.
 def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, color_filter = None):
+    print(card)
     mana_cost = card['mana_cost']
     name = card['name']
 
