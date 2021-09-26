@@ -91,6 +91,9 @@ async def data_query(query, channel):
     rest = card_query
     while rest != '':
         print(rest)
+        print(rest[0])
+        print(rest.find(rest[0], 1))
+        print(rest[0] in ['"', "'"] and rest.find(rest[0], 1) != -1)
         # Parse cardname, allowing spaces inside quotes
         if rest[0] in ['"', "'"] and rest.find(rest[0], 1) != -1:
             end = rest.find(rest[0], 1)
