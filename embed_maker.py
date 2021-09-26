@@ -33,7 +33,7 @@ def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, 
     elif 'card_faces' in card:
         mana_cost = card['card_faces'][0]['mana_cost']
     name = card['name']
-    stored_name = get_card_name(name)
+    stored_name = get_card_name(card)
 
     
     title = name + " " + WUBRG.emojify_mana_cost(mana_cost)
