@@ -120,7 +120,7 @@ async def data_query(query, channel):
                 else:
                     await send_message(channel, f'Error: cannot find card "{raw_cardname}"')
             else:
-                scryfall_cards.append([response])
+                scryfall_cards.append(response)
         except:
             await send_message(channel, f'Error querying Scryfall for {raw_cardname}')
 
