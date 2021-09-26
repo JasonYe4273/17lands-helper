@@ -140,6 +140,8 @@ def get_emoji(emoji_str):
 
     if len(manamojis) > 0:
         return str(manamojis[0])
+    else:
+        return ""
 
 # NOTE: Imcomplete
 # Parses a string mana cost into a list of mana 'elements', while converting
