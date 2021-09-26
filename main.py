@@ -8,7 +8,7 @@ from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE, DATA_QUERY_L, DATA
 import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
 from embed_maker import gen_card_embed, supported_color_strings
-from utils import format_data
+from utils import format_data, get_card_name
 
 client = discord.Client()
 
@@ -197,7 +197,7 @@ async def data_query(query, channel):
     filtered_sets = []
     for s in sets:
         for c in scryfall_cards:
-            if c['name'] in cache[s][formats[0]]:
+            if get_card_name(c) in cache[s][formats[0]]:
                 filtered_sets.append(s)
                 break
     sets = filtered_sets
@@ -251,7 +251,7 @@ async def data_query(query, channel):
                 except:
                     await send_message(channel, f'Failed to fetch data for {s} {f} from 17lands')
         for card in scryfall_cards:
-            cardname = card['name']
+            cardname = get_card_name(card)
             if cardname in data_to_use[formats[0]] and cardname not in sent:
                 # header = [s] + [f for f in formats]
                 # table = [[dc_name] + [
@@ -273,7 +273,7 @@ async def data_query(query, channel):
 
     # result = ''
     # for card in scryfall_cards:
-    #     cardname = card['name']
+    #     cardname = get_card_name(card)
     #     if cardname not in tables:
     #         result += f'Cannot find data for {cardname} in 17lands\n'
     #         continue
