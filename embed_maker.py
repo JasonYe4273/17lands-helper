@@ -3,6 +3,7 @@ import time
 from datetime import date
 import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
+from utils import format_data
 
 
 
@@ -49,7 +50,7 @@ def gen_card_embed(card, data, formats, fields, start_date, end_date, color_filt
     # TODO: Populate with real card data.
     FORMAT_STRING = "`{:^6}`"
     fields_strs = [FORMAT_STRING.format(f) for (_, f) in fields]
-    data_strs = "\r\n".join([" ".join([FORMAT_STRING.format(data[f][name][field]) for (field, _) in fields]) for f in formats])
+    data_strs = "\r\n".join([" ".join([FORMAT_STRING.format(format_data(data[f][name][field])) for (field, _) in fields]) for f in formats])
     embed.add_field(name=" ".join(fields_strs), value=data_strs, inline=True)
 
 

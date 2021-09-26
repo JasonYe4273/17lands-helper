@@ -9,6 +9,7 @@ from settings import DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID
 import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
 from embed_maker import gen_card_embed
+from utils import format_data
 
 client = discord.Client()
 
@@ -61,14 +62,6 @@ async def on_ready():
     WUBRG.cache_manamojis(client)
     fetch_data(OLD_SETS)
     print('Logged in as {0.user}'.format(client))
-
-def format_data(data):
-    if type(data) != float:
-        return str(data)
-    elif data < 1:
-        return "{:.1f}%".format(data * 100)
-    else:
-        return "{:.2f}".format(data)
 
 def parse_colors(colors_str):
     if colors_str == 'all':
