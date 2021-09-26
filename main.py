@@ -284,7 +284,7 @@ async def data_query(query, channel):
             result += '\n'
         result += '```\n'
 
-        await send_embed_message(gen_card_embed(card))
+        await send_embed_message(channel, gen_card_embed(card))
 
     if result != '':
         await send_message(channel, result)
