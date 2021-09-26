@@ -198,7 +198,10 @@ def to_update(s, f):
             print(f"{s} {f} is live, and new data should exist. Signaling update...")
             return True
 
-        edit_date = datetime.fromtimestamp(os.path.getmtime(os.path.join(DATA_DIR, FILENAME.format(s, f))))
+        try:
+            edit_date = datetime.fromtimestamp(os.path.getmtime(os.path.join(DATA_DIR, FILENAME.format(s, f))))
+        except:
+            edit_date = START_DATE
         edit_diff = cur_date - edit_date
         # If the file is over 24hrs old, update it.
         if edit_diff >= timedelta(days=1):
