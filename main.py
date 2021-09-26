@@ -64,6 +64,8 @@ async def on_ready():
 def parse_colors(colors_str):
     if colors_str == 'all':
         return 'all'
+    if colors_str.capitalize() in COLOR_ALIASES:
+        return COLOR_ALIASES[colors_sstr.capitalize()]
     colors_exist = {'W': False, 'U': False, 'B': False, 'R': False, 'G': False}
     for c in colors_str.upper():
         if c not in colors_exist:
