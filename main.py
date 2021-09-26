@@ -8,7 +8,7 @@ from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE
 from settings import DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID
 import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
-import embed_maker
+from embed_maker import gen_card_embed
 
 client = discord.Client()
 
@@ -94,7 +94,7 @@ async def data_query(query, channel):
     options_query = '' if separator == -1 else query[separator+1:].strip()
 
     # Parse cardnames to the left of separator
-    cardnames = []
+    scryfall_cards = []
     rest = card_query
     while rest != '':
         # Parse cardname, allowing spaces inside quotes
@@ -120,7 +120,7 @@ async def data_query(query, channel):
                 else:
                     await send_message(channel, f'Error: cannot find card "{raw_cardname}"')
             else:
-                cardnames.append(response['name'])
+                scryfall_cards.append([response])
         except:
             await send_message(channel, f'Error querying Scryfall for {raw_cardname}')
 
@@ -195,8 +195,8 @@ async def data_query(query, channel):
 
     filtered_sets = []
     for s in sets:
-        for c in cardnames:
-            if c in cache[s][formats[0]]:
+        for c in scryfall_cards:
+            if c['name'] in cache[s][formats[0]]:
                 filtered_sets.append(s)
                 break
     sets = filtered_sets
@@ -247,28 +247,30 @@ async def data_query(query, channel):
                     print('Success!')
                 except:
                     await send_message(channel, f'Failed to fetch data for {c} from 17lands')
-        for c in cardnames:
-            if c in data_to_use[formats[0]] and c not in tables:
+        for card in scryfall_cards:
+            cardname = card['name']
+            if cardname in data_to_use[formats[0]] and cardname not in tables:
                 header = [s] + [f for f in formats]
                 table = [[dc_name] + [
-                    format_data(data_to_use[f][c][dc]) for f in formats
+                    format_data(data_to_use[f][cardname][dc]) for f in formats
                 ] for (dc, dc_name, v) in data_commands.values() if not v or verbose]
-                tables[c] = [header] + table
+                tables[cardname] = [header] + table
 
     result = ''
-    for c in cardnames:
-        if c not in tables:
-            result += f'Cannot find data for {c} in 17lands\n'
+    for card in scryfall_cards:
+        cardname = card['name']
+        if cardname not in tables:
+            result += f'Cannot find data for {cardname} in 17lands\n'
             continue
 
-        t = tables[c]
+        t = tables[cardname]
 
-        result += f'Data for {c}{result_description}\n'
+        result += f'Data for {cardname}{result_description}\n'
         result += '```'
         column_lengths = [0 for _ in t[0]]
         for r in range(len(t)):
-            for c in range(len(t[0])):
-                column_lengths[c] = max(column_lengths[c], len(t[r][c]))
+            for cardname in range(len(t[0])):
+                column_lengths[cardname] = max(column_lengths[cardname], len(t[r][cardname]))
 
         for c in range(len(t[0])):
             result += t[0][c] + (column_lengths[c]+1-len(t[0][c]))*' ' + '| '
@@ -281,6 +283,8 @@ async def data_query(query, channel):
                 result += t[r][c] + (column_lengths[c]+1-len(t[r][c]))*' ' + '| '
             result += '\n'
         result += '```\n'
+
+        await send_embed_message(gen_card_embed(card))
 
     if result != '':
         await send_message(channel, result)

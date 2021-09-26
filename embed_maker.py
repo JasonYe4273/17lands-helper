@@ -20,12 +20,8 @@ def new_data_embed(title, description = "", url = ""):
 # Returns an embed which displays the game stats about a particular card.
 # NOTE: Unfinished. Needs to be populated with real data.
 def gen_card_embed(card, color_filter = None):
-    mana_cost = '1WW'
-    name = 'Card Name'
-
-    # TODO: Hand in a card 'object' pulled from Scryfall, and use it to populate data.
-    #cost = card['mana_cost']
-    #name = card['name']
+    mana_cost = card['mana_cost']
+    name = card['name']
 
     
     title = name + " " + WUBRG.emojify_mana_cost(mana_cost)
