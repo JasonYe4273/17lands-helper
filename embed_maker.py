@@ -19,7 +19,7 @@ def new_data_embed(title, description = "", url = ""):
 
 # Returns an embed which displays the game stats about a particular card.
 # NOTE: Unfinished. Needs to be populated with real data.
-def gen_card_embed(card, color_filter = None):
+def gen_card_embed(card, data, formats, fields, start_date, end_date, color_filter = None):
     mana_cost = card['mana_cost']
     name = card['name']
 
@@ -28,29 +28,29 @@ def gen_card_embed(card, color_filter = None):
     embed = new_data_embed(title, url="https://www.17lands.com/card_ratings")
 
     # Generate a field to show the scope of the data.
-    date_range = "Date Range:\t\t {xx-xx-xxxx} to {xx-xx-xxxx}"  + '\r\n'
+    date_range = f"Date Range:\t\t {start_date} to {end_date}"  + '\r\n'
 
-    filt_emojis = WUBRG.emojify_color_id('')
+    filt_emojis = WUBRG.emojify_color_id(color_filter)
     if filt_emojis == "":
         filt_emojis = "*None*"
     filt = "Colour filter: \t\t" + filt_emojis + '\r\n'
-    color_winrate = "Avg. " + WUBRG.emojify_color_id(mana_cost) + " Winrate: \t" + "%00.00" + '\r\n'
-    embed.add_field(name="Data Info", value=date_range + filt + color_winrate, inline=False)
+    if color_filter is not None:
+        color_winrate = "Avg. " + WUBRG.emojify_color_id(color_filter) + " Winrate: \t" + "%00.00" + '\r\n'
+        embed.add_field(name="Data Info", value=date_range + filt + color_winrate, inline=False)
   
 
     # Generate a field which acts as the labels for the data.
     #SET = WUBRG.get_emoji("ELD") # TODO: Find and add set emojis to the sever to use with WUBRG.py
     SET = "MID"
-    embed.add_field(name=f" - {SET} - ", value="*TRAD.*\r\n*PREMIER*\r\n*QUICK*", inline=True)
+    formats_column = "\r\n".join([f'*{f}*' for f in formats])
+    embed.add_field(name=f" - {SET} - ", value=formats_column, inline=True)
 
     # Generate a field which is populated with a 'table' of card data.
     # TODO: Populate with real card data.
-    MESSAGE = "%00.00"
-    FIELDS = ["ALSA", "ATA", "GP", "GNP", "OH", "GD", "GIH", "GND", "IWD"]
     FORMAT_STRING = "`{:^6}`"
-    fields_strs = [FORMAT_STRING.format(x) for x in FIELDS]
-    data_strs = (FORMAT_STRING.format(MESSAGE) + " ")*9
-    embed.add_field(name=" ".join(fields_strs), value=(data_strs + "\r\n")*3, inline=True)
+    fields_strs = [FORMAT_STRING.format(f.upper()) for f in fields]
+    data_strs = "\r\n".join([" ".join([FORMAT_STRING.format(data[f][name][field]) for field in fields]) for f in formats])
+    embed.add_field(name=" ".join(fields_strs), value=data_strs, inline=True)
 
 
     return embed

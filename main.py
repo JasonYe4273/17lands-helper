@@ -256,6 +256,16 @@ async def data_query(query, channel):
                 ] for (dc, dc_name, v) in data_commands.values() if not v or verbose]
                 tables[cardname] = [header] + table
 
+                await send_embed_message(channel, gen_card_embed(
+                    card,
+                    data_to_use,
+                    formats,
+                    [dc_name for (_, dc_name, v) in data_commands.values() if not v],
+                    start_date,
+                    end_date,
+                    color_filter=(None if colors == 'all' else colors)
+                ))
+
     result = ''
     for card in scryfall_cards:
         cardname = card['name']
@@ -283,8 +293,6 @@ async def data_query(query, channel):
                 result += t[r][c] + (column_lengths[c]+1-len(t[r][c]))*' ' + '| '
             result += '\n'
         result += '```\n'
-
-        await send_embed_message(channel, gen_card_embed(card))
 
     if result != '':
         await send_message(channel, result)
