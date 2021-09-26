@@ -157,6 +157,8 @@ def parse_cost(mana_cost):
 # Takes a mana cost and attempts to return a string of emojis which
 # represent that mana cost, as it would look on the card.
 def emojify_mana_cost(mana_cost):
+    if mana_cost is None:
+        return ""
     mana_cost = parse_cost(mana_cost)
     cost = ""
     for sym in mana_cost:
