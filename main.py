@@ -95,7 +95,7 @@ async def data_query(query, channel):
         print(rest.find(QUOTE_PAIRS[rest[0]], 1) if rest[0] in QUOTE_PAIRS else "None")
         # Parse cardname, allowing spaces inside quotes
         if rest[0] in QUOTE_PAIRS and rest.find(QUOTE_PAIRS[rest[0]], 1) != -1:
-            end = rest.find(rest[0], 1)
+            end = rest.find(QUOTE_PAIRS[rest[0]], 1)
             raw_cardname = rest[1:end]
             rest = rest[end+1:].strip()
         else:
