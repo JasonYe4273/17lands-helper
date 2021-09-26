@@ -90,6 +90,7 @@ async def data_query(query, channel):
     scryfall_cards = []
     rest = card_query
     while rest != '':
+        print(rest)
         # Parse cardname, allowing spaces inside quotes
         if rest[0] in ['"', "'"] and rest.find(rest[0], 1) != -1:
             end = rest.find(rest[0], 1)
@@ -103,6 +104,7 @@ async def data_query(query, channel):
             else:
                 raw_cardname = rest[:end]
                 rest = rest[end:].strip()
+        print(raw_cardname)
 
         # Try get unique card from Scryfall
         try:
