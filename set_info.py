@@ -78,8 +78,7 @@ SET_CONFIG = {
 }
 
 SETS = ['MID', 'AFR']
-FORMATS = ['PremierDraft', 'TradDraft']
-#FORMATS = ['PremierDraft', 'TradDraft', 'QuickDraft', 'Sealed', 'TradSealed', 'DraftChallenge
+FORMATS = ['PremierDraft', 'TradDraft', 'QuickDraft', 'Sealed', 'TradSealed', 'DraftChallenge']
 SET_TREE = dict()
 for s in SETS:
     SET_TREE[s] = dict()

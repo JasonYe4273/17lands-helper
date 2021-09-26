@@ -57,12 +57,13 @@ async def send_message(channel, message):
 @client.event
 async def on_ready():
     WUBRG.cache_manamojis(client)
-    fetch_data(OLD_SETS)
+    init_cache()
+    #fetch_data(OLD_SETS)
     print('Logged in as {0.user}'.format(client))
 
 def parse_colors(colors_str):
     if colors_str == 'all':
-        return 'all'
+        return 'None'
     if colors_str.capitalize() in COLOR_ALIASES:
         return COLOR_ALIASES[colors_str.capitalize()]
     colors_exist = {'W': False, 'U': False, 'B': False, 'R': False, 'G': False}
@@ -194,7 +195,7 @@ async def data_query(query, channel):
     filtered_sets = []
     for s in sets:
         for c in scryfall_cards:
-            if get_card_name(c) in cache[s][formats[0]]:
+            if get_card_name(c) in DATA_CACHE[s][formats[0]][colors]:
                 filtered_sets.append(s)
                 break
     sets = filtered_sets
@@ -283,25 +284,25 @@ async def refresh_data():
     print(DATA_CACHE)
     #fetch_data(UPDATING_SETS)
 
-def fetch_data(sets):
-    for s in sets:
-        cache[s] = {f: {} for f in FORMATS}
-        for f in FORMATS:
-            success = False
-            while not success:
-                try:
-                    print(f'Fetching data for {s} {f}...')
-                    response = requests.get(
-                        'https://www.17lands.com/card_ratings/data?' +
-                        f'expansion={s}&format={f}&start_date={START_DATE}&end_date={date.today()}'
-                    )
-                    for c in response.json():
-                        cache[s][f][c['name']] = c
-                    success = True
-                    print('Success!')
-                except:
-                    print('Failed; trying again in 30s')
-                    time.sleep(30)
+# def fetch_data(sets):
+#     for s in sets:
+#         cache[s] = {f: {} for f in FORMATS}
+#         for f in FORMATS:
+#             success = False
+#             while not success:
+#                 try:
+#                     print(f'Fetching data for {s} {f}...')
+#                     response = requests.get(
+#                         'https://www.17lands.com/card_ratings/data?' +
+#                         f'expansion={s}&format={f}&start_date={START_DATE}&end_date={date.today()}'
+#                     )
+#                     for c in response.json():
+#                         cache[s][f][c['name']] = c
+#                     success = True
+#                     print('Success!')
+#                 except:
+#                     print('Failed; trying again in 30s')
+#                     time.sleep(30)
 
 
 refresh_data.start()
