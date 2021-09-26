@@ -7,13 +7,13 @@ from discord.ext import tasks
 from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE, DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID
 import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
-from embed_maker import gen_card_embed
+from embed_maker import gen_card_embed, supported_color_strings
 from utils import format_data
 
 client = discord.Client()
 
 UPDATING_SETS = ['MID']
-OLD_SETS = [] # ['AFR', 'STX', 'KHM']
+OLD_SETS = ['AFR', 'STX', 'KHM']
 SETS = UPDATING_SETS + OLD_SETS
 
 FORMATS = {
@@ -88,7 +88,6 @@ async def data_query(query, channel):
     scryfall_cards = []
     rest = card_query
     while rest != '':
-        print(rest)
         # Parse cardname, allowing spaces inside quotes
         if rest[0] in ['"', "'"] and rest.find(rest[0], 1) != -1:
             end = rest.find(rest[0], 1)
@@ -102,7 +101,6 @@ async def data_query(query, channel):
             else:
                 raw_cardname = rest[:end]
                 rest = rest[end:].strip()
-        print(raw_cardname)
 
         # Try get unique card from Scryfall
         try:
@@ -324,6 +322,9 @@ async def on_message(message):
     command = rest.split(' ')[0]
     rest = rest[len(command):].strip()
 
+    if rest.startswith('colors'):
+        send_embed_message(message.channel, supported_color_strings())
+
 
 @tasks.loop(hours=12)
 async def refresh_data():
@@ -345,7 +346,6 @@ def fetch_data(sets):
                         cache[s][f][c['name']] = c
                     success = True
                     print('Success!')
-                    time.sleep(10)
                 except:
                     print('Failed; trying again in 30s')
                     time.sleep(30)
