@@ -6,6 +6,14 @@ from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMO
 from utils import format_data
 
 
+FORMAT_NICKNAMES = {
+    'PremierDraft': 'Bo1',
+    'TradDraft': 'Bo3',
+    'QuickDraft': 'Quick',
+    'Sealed': 'Seal',
+    'TradSealed': 'Bo3Seal',
+    'DraftChallenge': 'Chal.',
+}
 
 ### Data Embeds ###
 
@@ -20,7 +28,7 @@ def new_data_embed(title, description = "", url = ""):
 
 # Returns an embed which displays the game stats about a particular card.
 # NOTE: Unfinished. Needs to be populated with real data.
-def gen_card_embed(card, data, formats, fields, start_date, end_date, color_filter = None):
+def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, color_filter = None):
     mana_cost = card['mana_cost']
     name = card['name']
 
@@ -41,9 +49,8 @@ def gen_card_embed(card, data, formats, fields, start_date, end_date, color_filt
 
     # Generate a field which acts as the labels for the data.
     #SET = WUBRG.get_emoji("ELD") # TODO: Find and add set emojis to the sever to use with WUBRG.py
-    SET = "MID"
-    formats_column = "\r\n".join([f'*{f}*' for f in formats])
-    embed.add_field(name=f" - {SET} - ", value=formats_column, inline=True)
+    formats_column = "\r\n".join([f'*{FORMAT_NICKNAMES[f]}*' for f in formats])
+    embed.add_field(name=f" - {set_code} - ", value=formats_column, inline=True)
 
     # Generate a field which is populated with a 'table' of card data.
     # TODO: Populate with real card data.

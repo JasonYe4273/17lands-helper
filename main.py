@@ -4,8 +4,7 @@ import requests
 import time
 from datetime import date, datetime, timedelta
 from discord.ext import tasks
-from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE
-from settings import DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID
+from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE, DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID
 import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
 from embed_maker import gen_card_embed
@@ -19,11 +18,11 @@ SETS = UPDATING_SETS + OLD_SETS
 
 FORMATS = {
     'PremierDraft': ['bo1', 'premier', 'premierdraft'],
-    # 'TradDraft': ['bo3', 'trad', 'traditional', 'traddraft', 'traditionaldraft'],
-    # 'QuickDraft': ['qd', 'quick', 'quickdraft'],
-    # 'Sealed': ['sealed', 'bo1sealed', 'sealedbo1'],
-    # 'TradSealed': ['tradsealed', 'bo3sealed', 'sealedbo3'],
-    # 'DraftChallenge': ['challenge', 'draftchallenge'],
+    'TradDraft': ['bo3', 'trad', 'traditional', 'traddraft', 'traditionaldraft'],
+    'QuickDraft': ['qd', 'quick', 'quickdraft'],
+    'Sealed': ['sealed', 'bo1sealed', 'sealedbo1'],
+    'TradSealed': ['tradsealed', 'bo3sealed', 'sealedbo3'],
+    'DraftChallenge': ['challenge', 'draftchallenge'],
 }
 FORMAT_MAPPING = {}
 for f in FORMATS:
@@ -250,12 +249,13 @@ async def data_query(query, channel):
                 tables[cardname] = [header] + table
 
                 await send_embed_message(channel, gen_card_embed(
-                    card,
-                    data_to_use,
-                    formats,
-                    [(dc, dc_name) for (dc, dc_name, v) in data_commands.values() if not v],
-                    start_date,
-                    end_date,
+                    card=card,
+                    set_code=s,
+                    data=data_to_use,
+                    formats=formats,
+                    fields=[(dc, dc_name) for (dc, dc_name, v) in data_commands.values() if not v],
+                    start_date=start_date,
+                    end_date=end_date,
                     color_filter=(None if colors == 'all' else colors)
                 ))
 
