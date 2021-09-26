@@ -328,6 +328,8 @@ async def on_message(message):
         await send_embed_message(message.channel, supported_color_strings())
     elif command == 'help':
         await send_message(message.channel, 'Read the README here: <https://github.com/JasonYe4273/17lands-helper>')
+    elif command == 'code':
+        await send_message(message.channel, '<https://github.com/JasonYe4273/17lands-helper>')
 
 
 @tasks.loop(hours=12)

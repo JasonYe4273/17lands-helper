@@ -138,10 +138,7 @@ def get_emoji(emoji_str):
     
     manamojis = [emo for emo in MANAMOJIS if emo.name == manamoji_str]
 
-    if (len(manamojis) != 1):
-        print(f'Found {len(manamojis)} for string: {emoji_str}')
-        return ''
-    else:
+    if len(manamojis) > 0:
         return str(manamojis[0])
 
 # NOTE: Imcomplete

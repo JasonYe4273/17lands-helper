@@ -1,4 +1,4 @@
-COMMAND_STR = '!'
+COMMAND_STR = '17!'
 DATA_QUERY_L = '{{'
 DATA_QUERY_R = '}}'
 DATA_QUERY_MID = '|'
