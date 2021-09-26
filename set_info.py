@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-import time
+from time import sleep
 from datetime import date, time, datetime, timedelta
 import WUBRG
 from WUBRG import MAIN_COLOUR_GROUPS
@@ -165,7 +165,7 @@ def save_set_data(s, f):
         
         json_colour = fetch_format_data(s, f, c)
         json_out[c] = json_colour
-        time.sleep(3)
+        sleep(3)
 
 
     # Convert the aggreate dictionary into a .json file, and save it.       
@@ -252,7 +252,7 @@ def fetch_format_data(s, f, c = 'None', start_date = None, end_date = None):
         except:
             if count < 5:
                 print('Failed; trying again in 30s')
-                time.sleep(30)
+                sleep(30)
                 continue
             else:
                 print(f'Failed to get data after 5 attempts. File {filename} not created')
@@ -279,7 +279,7 @@ def fetch_all_data():
             if to_update(s, f):
                 update_dict[s][f] = True
                 save_set_data(s, f)
-                time.sleep(60)
+                sleep(60)
             else:
                 update_dict[s][f] = False
                 print(f'{s} {f} data is up to date!')
