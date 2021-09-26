@@ -322,8 +322,8 @@ async def on_message(message):
     command = rest.split(' ')[0]
     rest = rest[len(command):].strip()
 
-    if rest.startswith('colors'):
-        send_embed_message(message.channel, supported_color_strings())
+    if command == 'colors':
+        await send_embed_message(message.channel, supported_color_strings())
 
 
 @tasks.loop(hours=12)

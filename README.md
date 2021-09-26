@@ -1,4 +1,4 @@
-# 17lands-helper
+# 17lands Helper Bot
 Discord bot for scraping 17lands data
 
 ## Status
@@ -10,6 +10,7 @@ Go to [this link](https://discord.com/api/oauth2/authorize?client_id=89062819766
 ## How to use
 
 The bot currently responds to the following commands:
+- `!colors` will list valid strings for specifying color combinations (relevant for data query options)
 - Data queries:
     - The bot will respond to messages that include substring(s) like `{{[cardnames] | [options]}}`. Everything is case-insensitive.
     - `[cardnames]` is a list of names of cards you want to query data for, separated by spaces. This uses Scryfall's fuzzy match to find the card, so slight misspellings and incomplete names are often okay. A name with spaces must be enclosed by quotes, otherwise it will be interpreted as multiple names. For example: `{{jadar "gisa resurrector"}}` will query for the cards Jadar, Ghoulcaller of Nephalia and Gisa, Glorious Resurrector.
@@ -38,10 +39,15 @@ The bot currently responds to the following commands:
             - `-d=[days]` or `days=[days]` will set the number of days in the time period. If the length of the time period is not specified, it will default to querying over all 17lands data.
                 - `-w=[weeks]`, `weeks=[weeks]`, `-m=[months]`, and `months=[months]` function similarly, except a week is 7 days and a month is 30 days. Using multiple flags is additive; `-d=5 -w=1 -m=1` is equivalent to `-d=42`.
         - You can specify what color decks to query data from. **Note**: this will result in a slower query, as the data will not be cached, and will need to be dynamically fetched from 17lands.
-            - `-c=[colors]` or `colors=[colors]` will set this option. Valid strings for `[colors]` must either be `all` to specify all decks (the default), or any combination and order of the `wubrg` colors. Only the first such valid option will be used.
+            - `-c=[colors]` or `colors=[colors]` will set this option. See `!colors` for a list of valid inputs
         - Adding `-v` or `verbose` as an option will cause the query to also return data counts (things like # Games Played) in addition to winrates.
     - Examples
         - `{{jadar "gisa resurrector"}}` will give all data for Jadar, Ghoulcaller of Nephalia and Gisa, Glorious Resurrector.
     	- `{{jadar "gisa resurrector" | drafts gih}}` will give ALSA, ATA, and GIH data for Jadar, Ghoulcaller of Nephalia and Gisa, Glorious Resurrector.
         - `{{jadar "gisa resurrector" | drafts gih -w=2 -e=09-21-2021}}` will give ALSA, ATA, and GIH data for Jadar, Ghoulcaller of Nephalia and Gisa, Glorious Resurrector in the time period of 9/7/2021 to 9/21/2021
         - `{{jadar "gisa resurrector" | drafts gih -c=ub}}` will give ALSA, ATA, and GIH data for Jadar, Ghoulcaller of Nephalia and Gisa, Glorious Resurrector in UB decks only.
+
+## Acknowledgements
+Huge thanks to ZacharyN for helping with development - among other things they made the nice embeds!
+
+And of course, none of this would be possible without the excellent work of Scryfall and 17lands!
