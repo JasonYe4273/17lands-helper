@@ -260,7 +260,7 @@ async def data_query(query, channel):
                     card,
                     data_to_use,
                     formats,
-                    [dc_name for (_, dc_name, v) in data_commands.values() if not v],
+                    [(dc, dc_name) for (dc, dc_name, v) in data_commands.values() if not v],
                     start_date,
                     end_date,
                     color_filter=(None if colors == 'all' else colors)

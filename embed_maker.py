@@ -48,8 +48,8 @@ def gen_card_embed(card, data, formats, fields, start_date, end_date, color_filt
     # Generate a field which is populated with a 'table' of card data.
     # TODO: Populate with real card data.
     FORMAT_STRING = "`{:^6}`"
-    fields_strs = [FORMAT_STRING.format(f.upper()) for f in fields]
-    data_strs = "\r\n".join([" ".join([FORMAT_STRING.format(data[f][name][field]) for field in fields]) for f in formats])
+    fields_strs = [FORMAT_STRING.format(f) for (_, f) in fields]
+    data_strs = "\r\n".join([" ".join([FORMAT_STRING.format(data[f][name][field]) for (field, _) in fields]) for f in formats])
     embed.add_field(name=" ".join(fields_strs), value=data_strs, inline=True)
 
 
