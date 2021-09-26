@@ -13,4 +13,5 @@ def get_card_name(card):
     if split == -1:
         return name
     else:
+        print(name[:split].strip())
         return name[:split].strip()
