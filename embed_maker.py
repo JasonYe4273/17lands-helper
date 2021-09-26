@@ -35,9 +35,8 @@ def gen_card_embed(card, data, formats, fields, start_date, end_date, color_filt
     if filt_emojis == "":
         filt_emojis = "*None*"
     filt = "Colour filter: \t\t" + filt_emojis + '\r\n'
-    if color_filter is not None:
-        color_winrate = "Avg. " + WUBRG.emojify_color_id(color_filter) + " Winrate: \t" + "%00.00" + '\r\n'
-        embed.add_field(name="Data Info", value=date_range + filt + color_winrate, inline=False)
+    color_winrate = "Avg. " + WUBRG.emojify_color_id(color_filter) + " Winrate: \t" + "%00.00" + '\r\n'
+    embed.add_field(name="Data Info", value=date_range + filt + color_winrate, inline=False)
   
 
     # Generate a field which acts as the labels for the data.
