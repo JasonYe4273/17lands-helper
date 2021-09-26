@@ -30,6 +30,8 @@ for f in FORMATS:
     for s in FORMATS[f]:
         FORMAT_MAPPING[s] = f
 
+cache = {s: {f: {} for f in FORMATS} for s in SETS}
+
 DATA_COMMANDS = {
     'alsa': [('seen_count', '# Seen', True), ('avg_seen', 'ALSA', False)],
     'ata': [('pick_count', '# Taken', True), ('avg_pick', 'ATA', False)],
@@ -57,8 +59,8 @@ async def send_message(channel, message):
 @client.event
 async def on_ready():
     WUBRG.cache_manamojis(client)
-    init_cache()
-    #fetch_data(OLD_SETS)
+    #init_cache()
+    fetch_data(OLD_SETS)
     print('Logged in as {0.user}'.format(client))
 
 def parse_colors(colors_str):
@@ -181,6 +183,8 @@ async def data_query(query, channel):
         elif ol.startswith('-c=') or ol.startswith('colors='):
             if colors is None:
                 colors = parse_colors(ol[ol.find('=')+1:])
+                if colors is not None and colors != 'all':
+                    can_use_cache = False
 
     # Set defaults if no options specified
     if len(formats) == 0:
@@ -195,7 +199,7 @@ async def data_query(query, channel):
     filtered_sets = []
     for s in sets:
         for c in scryfall_cards:
-            if get_card_name(c) in DATA_CACHE[s][formats[0]][colors]:
+            if get_card_name(c) in cache[s][formats[0]]:
                 filtered_sets.append(s)
                 break
     sets = filtered_sets
@@ -217,15 +221,39 @@ async def data_query(query, channel):
         start_date = START_DATE
         result_description = f' up{result_description}'
 
+    # Calculate 17lands query string
+    query_str = f'&start_date={start_date}&end_date={end_date}'
+    if colors is not None and colors != 'all':
+        result_description = f' in {colors} decks{result_description}'
+        query_str += f'&colors={colors}'
+
     sent = []
     for s in sets:
         data_to_use = {}
         for f in formats:
             # Use data from the cache if possible
             if can_use_cache:
-                data_to_use[f] = DATA_CACHE[s][f][colors]
+                #data_to_use[f] = DATA_CACHE[s][f][colors]
+                data_to_use[f] = cache[s][f]
+            elif f'{f}{query_str}' in cache[s]:
+                data_to_use[f] = cache[s][f'{f}{query_str}']
             else:
-                data_to_use[f] = fetch_format_data(s, f, colors, start_date, end_date)
+                #data_to_use[f] = fetch_format_data(s, f, colors, start_date, end_date)
+                try:
+                    # Otherwise, query from 17lands and add the result to the cache
+                    data_to_use[f] = {}
+                    cache[s][f'{f}{query_str}'] = {}
+                    print(f'Fetching data for {s} {f}...')
+                    response = requests.get(
+                        'https://www.17lands.com/card_ratings/data?' +
+                        f'expansion={s}&format={f}{query_str}'
+                    )
+                    for c in response.json():
+                        data_to_use[f][c['name']] = c
+                        cache[s][f'{f}{query_str}'][c['name']] = c
+                    print('Success!')
+                except:
+                    await send_message(channel, f'Failed to fetch data for {s} {f} from 17lands')
         for card in scryfall_cards:
             cardname = get_card_name(card)
             if cardname in data_to_use[formats[0]] and cardname not in sent:
@@ -280,29 +308,29 @@ async def on_message(message):
 
 @tasks.loop(hours=12)
 async def refresh_data():
-    init_cache()
-    print(DATA_CACHE)
-    #fetch_data(UPDATING_SETS)
+    #init_cache()
+    #print(DATA_CACHE)
+    fetch_data(UPDATING_SETS)
 
-# def fetch_data(sets):
-#     for s in sets:
-#         cache[s] = {f: {} for f in FORMATS}
-#         for f in FORMATS:
-#             success = False
-#             while not success:
-#                 try:
-#                     print(f'Fetching data for {s} {f}...')
-#                     response = requests.get(
-#                         'https://www.17lands.com/card_ratings/data?' +
-#                         f'expansion={s}&format={f}&start_date={START_DATE}&end_date={date.today()}'
-#                     )
-#                     for c in response.json():
-#                         cache[s][f][c['name']] = c
-#                     success = True
-#                     print('Success!')
-#                 except:
-#                     print('Failed; trying again in 30s')
-#                     time.sleep(30)
+def fetch_data(sets):
+    for s in sets:
+        cache[s] = {f: {} for f in FORMATS}
+        for f in FORMATS:
+            success = False
+            while not success:
+                try:
+                    print(f'Fetching data for {s} {f}...')
+                    response = requests.get(
+                        'https://www.17lands.com/card_ratings/data?' +
+                        f'expansion={s}&format={f}&start_date={START_DATE}&end_date={date.today()}'
+                    )
+                    for c in response.json():
+                        cache[s][f][c['name']] = c
+                    success = True
+                    print('Success!')
+                except:
+                    print('Failed; trying again in 30s')
+                    time.sleep(30)
 
 
 refresh_data.start()
