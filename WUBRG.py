@@ -67,6 +67,13 @@ COLOR_ALIASES_SUPPORT = {
     }
 }
 
+
+# Merging all of the supported colour-sets.
+COLOR_ALIASES = {'5-Color' : "WUBRG", 'All' : "WUBRGC", 'None' : "None"}
+for d in COLOR_ALIASES_SUPPORT:
+    COLOR_ALIASES = COLOR_ALIASES | COLOR_ALIASES_SUPPORT[d]
+
+
 # Lists of alais based on the number of colours.
 COLOUR_GROUPINGS = {
     'Mono-Color': ['White', 'Blue', 'Black', 'Red', 'Green'],
@@ -74,11 +81,7 @@ COLOUR_GROUPINGS = {
     'Three-Color': ['Jeksai', 'Mardu', 'Abzan', 'Sultai', 'Temur', 'Esper', 'Bant', 'Naya', 'Grixis', 'Jund']
 }
 
-
-# Merging all of the supported colour-sets.
-COLOR_ALIASES = {'All' : "WUBRGC", 'None' : ""}
-for d in COLOR_ALIASES_SUPPORT:
-    COLOR_ALIASES = COLOR_ALIASES | COLOR_ALIASES_SUPPORT[d]
+MAIN_COLOUR_GROUPS = [''] # Filled below
 
 
 # Takes in a string, and attempts to convert it to a color_string.
@@ -99,6 +102,11 @@ def get_color_string(s):
         s = "WUBRGC"
     
     return s
+
+
+
+MAIN_COLOUR_GROUPS = ['None'] + [get_color_string(y) for x in COLOUR_GROUPINGS for y in COLOUR_GROUPINGS[x]]
+
 
 
 # Takes in a valid colour string, or colour string alias,
