@@ -3,7 +3,7 @@ import time
 from datetime import date
 import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
-from utils import format_data
+from utils import format_data, get_card_name
 
 
 FORMAT_NICKNAMES = {
@@ -28,9 +28,12 @@ def new_data_embed(title, description = "", url = ""):
 
 # Returns an embed which displays the game stats about a particular card.
 def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, color_filter = None):
-    print(card)
-    mana_cost = card['mana_cost']
+    if 'mana_cost' in card:
+        mana_cost = card['mana_cost']
+    elif 'card_faces' in card:
+        mana_cost = card['card_faces'][0]['mana_cost']
     name = card['name']
+    17lands_name = get_card_name(name)
 
     
     title = name + " " + WUBRG.emojify_mana_cost(mana_cost)
@@ -56,7 +59,7 @@ def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, 
     # Generate a field which is populated with a 'table' of card data.
     FORMAT_STRING = "`{:^6}`"
     fields_strs = [FORMAT_STRING.format(f) for (_, f) in fields]
-    data_strs = "\r\n".join([" ".join([FORMAT_STRING.format(format_data(data[f][name][field])) for (field, _) in fields]) for f in formats])
+    data_strs = "\r\n".join([" ".join([FORMAT_STRING.format(format_data(data[f][17lands_name][field])) for (field, _) in fields]) for f in formats])
     embed.add_field(name=" ".join(fields_strs), value=data_strs, inline=True)
 
 
