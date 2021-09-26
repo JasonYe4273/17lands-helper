@@ -88,6 +88,7 @@ async def data_query(query, channel):
     scryfall_cards = []
     rest = card_query
     while rest != '':
+        print(rest)
         # Parse cardname, allowing spaces inside quotes
         if rest[0] in ['"', "'"] and rest.find(rest[0], 1) != -1:
             end = rest.find(rest[0], 1)
@@ -101,6 +102,7 @@ async def data_query(query, channel):
             else:
                 raw_cardname = rest[:end]
                 rest = rest[end:].strip()
+        print(raw_cardname)
 
         # Try get unique card from Scryfall
         try:
@@ -176,6 +178,7 @@ async def data_query(query, channel):
                 if colors is not None and colors != 'all':
                     can_use_cache = False
 
+    # Set defaults if no options specified
     if len(formats) == 0:
         formats = [DEFAULT_FORMAT]
     if len(sets) == 0:
@@ -184,6 +187,7 @@ async def data_query(query, channel):
         for dc in DATA_COMMANDS['data']:
             data_commands[dc[0]] = dc
 
+    # Filter out irrelevant sets
     filtered_sets = []
     for s in sets:
         for c in scryfall_cards:
@@ -192,8 +196,8 @@ async def data_query(query, channel):
                 break
     sets = filtered_sets
 
+    # Calculate start and end date
     result_description = ''
-
     if end_date is None:
         end_date = date.today()
         result_description = f' to today'
@@ -209,22 +213,24 @@ async def data_query(query, channel):
         start_date = START_DATE
         result_description = f' up{result_description}'
 
+    # Calculate 17lands query string
     query_str = f'&start_date={start_date}&end_date={end_date}'
     if colors is not None and colors != 'all':
         result_description = f' in {colors} decks{result_description}'
         query_str += f'&colors={colors}'
-    print(query_str)
 
-    tables = {}
+    sent = []
     for s in sets:
         data_to_use = {}
         for f in formats:
+            # Use data from the cache if possible
             if can_use_cache:
                 data_to_use[f] = cache[s][f]
             elif f'{f}{query_str}' in cache[s]:
                 data_to_use[f] = cache[s][f'{f}{query_str}']
             else:
                 try:
+                    # Otherwise, query from 17lands and add the result to the cache
                     data_to_use[f] = {}
                     cache[s][f'{f}{query_str}'] = {}
                     print(f'Fetching data for {s} {f}...')
@@ -237,15 +243,16 @@ async def data_query(query, channel):
                         cache[s][f'{f}{query_str}'][c['name']] = c
                     print('Success!')
                 except:
-                    await send_message(channel, f'Failed to fetch data for {c} from 17lands')
+                    await send_message(channel, f'Failed to fetch data for {s} {f} from 17lands')
         for card in scryfall_cards:
             cardname = card['name']
-            if cardname in data_to_use[formats[0]] and cardname not in tables:
-                header = [s] + [f for f in formats]
-                table = [[dc_name] + [
-                    format_data(data_to_use[f][cardname][dc]) for f in formats
-                ] for (dc, dc_name, v) in data_commands.values() if not v or verbose]
-                tables[cardname] = [header] + table
+            if cardname in data_to_use[formats[0]] and cardname not in sent:
+                # header = [s] + [f for f in formats]
+                # table = [[dc_name] + [
+                #     format_data(data_to_use[f][cardname][dc]) for f in formats
+                # ] for (dc, dc_name, v) in data_commands.values() if not v or verbose]
+                # tables[cardname] = [header] + table
+                sent.append(cardname)
 
                 await send_embed_message(channel, gen_card_embed(
                     card=card,
@@ -258,36 +265,36 @@ async def data_query(query, channel):
                     color_filter=(None if colors == 'all' else colors)
                 ))
 
-    result = ''
-    for card in scryfall_cards:
-        cardname = card['name']
-        if cardname not in tables:
-            result += f'Cannot find data for {cardname} in 17lands\n'
-            continue
+    # result = ''
+    # for card in scryfall_cards:
+    #     cardname = card['name']
+    #     if cardname not in tables:
+    #         result += f'Cannot find data for {cardname} in 17lands\n'
+    #         continue
 
-        t = tables[cardname]
+    #     t = tables[cardname]
 
-        result += f'Data for {cardname}{result_description}\n'
-        result += '```'
-        column_lengths = [0 for _ in t[0]]
-        for r in range(len(t)):
-            for cardname in range(len(t[0])):
-                column_lengths[cardname] = max(column_lengths[cardname], len(t[r][cardname]))
+    #     result += f'Data for {cardname}{result_description}\n'
+    #     result += '```'
+    #     column_lengths = [0 for _ in t[0]]
+    #     for r in range(len(t)):
+    #         for cardname in range(len(t[0])):
+    #             column_lengths[cardname] = max(column_lengths[cardname], len(t[r][cardname]))
 
-        for c in range(len(t[0])):
-            result += t[0][c] + (column_lengths[c]+1-len(t[0][c]))*' ' + '| '
-        result += '\n'
+    #     for c in range(len(t[0])):
+    #         result += t[0][c] + (column_lengths[c]+1-len(t[0][c]))*' ' + '| '
+    #     result += '\n'
 
-        result += '-' * (sum(column_lengths) + 2*len(column_lengths) + 1) + '\n'
+    #     result += '-' * (sum(column_lengths) + 2*len(column_lengths) + 1) + '\n'
 
-        for r in range(1, len(t)):
-            for c in range(len(t[0])):
-                result += t[r][c] + (column_lengths[c]+1-len(t[r][c]))*' ' + '| '
-            result += '\n'
-        result += '```\n'
+    #     for r in range(1, len(t)):
+    #         for c in range(len(t[0])):
+    #             result += t[r][c] + (column_lengths[c]+1-len(t[r][c]))*' ' + '| '
+    #         result += '\n'
+    #     result += '```\n'
 
-    if result != '':
-        await send_message(channel, result)
+    # if result != '':
+    #     await send_message(channel, result)
 
 
 @client.event

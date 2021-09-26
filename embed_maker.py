@@ -27,7 +27,6 @@ def new_data_embed(title, description = "", url = ""):
     return embed
 
 # Returns an embed which displays the game stats about a particular card.
-# NOTE: Unfinished. Needs to be populated with real data.
 def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, color_filter = None):
     mana_cost = card['mana_cost']
     name = card['name']
@@ -43,17 +42,17 @@ def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, 
     if filt_emojis == "":
         filt_emojis = "*None*"
     filt = "Colour filter: \t\t" + filt_emojis + '\r\n'
-    color_winrate = "Avg. " + WUBRG.emojify_color_id(color_filter) + " Winrate: \t" + "%00.00" + '\r\n'
+    # TODO: fetch color winrate from 17lands
+    color_winrate = ""#"Avg. " + WUBRG.emojify_color_id(color_filter) + " Winrate: \t" + "%00.00" + '\r\n'
     embed.add_field(name="Data Info", value=date_range + filt + color_winrate, inline=False)
   
 
     # Generate a field which acts as the labels for the data.
-    #SET = WUBRG.get_emoji("ELD") # TODO: Find and add set emojis to the sever to use with WUBRG.py
+    # SET = WUBRG.get_emoji("ELD") # TODO: Find and add set emojis to the sever to use with WUBRG.py
     formats_column = "\r\n".join([f'*{FORMAT_NICKNAMES[f]}*' for f in formats])
     embed.add_field(name=f" - {set_code} - ", value=formats_column, inline=True)
 
     # Generate a field which is populated with a 'table' of card data.
-    # TODO: Populate with real card data.
     FORMAT_STRING = "`{:^6}`"
     fields_strs = [FORMAT_STRING.format(f) for (_, f) in fields]
     data_strs = "\r\n".join([" ".join([FORMAT_STRING.format(format_data(data[f][name][field])) for (field, _) in fields]) for f in formats])
