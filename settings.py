@@ -4,3 +4,4 @@ DATA_QUERY_R = '}}'
 DATA_QUERY_MID = '|'
 DEFAULT_FORMAT = 'PremierDraft'
 START_DATE = '2019-01-01'
+QUOTE_PAIRS = {'"': '"', '“': '”'}

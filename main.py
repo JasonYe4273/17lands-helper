@@ -4,7 +4,7 @@ import requests
 import time
 from datetime import date, datetime, timedelta
 from discord.ext import tasks
-from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE, DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID
+from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE, DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID, QUOTE_PAIRS
 import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
 from embed_maker import gen_card_embed, supported_color_strings
@@ -90,12 +90,8 @@ async def data_query(query, channel):
     scryfall_cards = []
     rest = card_query
     while rest != '':
-        print(rest)
-        print(rest[0])
-        print(rest.find(rest[0], 1))
-        print(rest[0] in ['"', "'"] and rest.find(rest[0], 1) != -1)
         # Parse cardname, allowing spaces inside quotes
-        if rest[0] in ['"', "'"] and rest.find(rest[0], 1) != -1:
+        if rest[0] in QUOTE_PAIRS and rest.find(QUOTE_PAIRS[rest[0]], 1) != -1:
             end = rest.find(rest[0], 1)
             raw_cardname = rest[1:end]
             rest = rest[end+1:].strip()
@@ -107,7 +103,6 @@ async def data_query(query, channel):
             else:
                 raw_cardname = rest[:end]
                 rest = rest[end:].strip()
-        print(raw_cardname)
 
         # Try get unique card from Scryfall
         try:
