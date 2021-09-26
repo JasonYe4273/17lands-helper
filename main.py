@@ -89,10 +89,13 @@ async def data_query(query, channel):
     # Parse cardnames to the left of separator
     scryfall_cards = []
     rest = card_query
+    old_rest = None
     while rest != '':
-        print(rest)
-        print(rest[0])
-        print(rest.find(QUOTE_PAIRS[rest[0]], 1) if rest[0] in QUOTE_PAIRS else "None")
+        if rest == old_rest:
+            await send_message(channel, 'Error: infinite loop while parsing cardnames')
+            break
+        else:
+            old_rest = rest
         # Parse cardname, allowing spaces inside quotes
         if rest[0] in QUOTE_PAIRS and rest.find(QUOTE_PAIRS[rest[0]], 1) != -1:
             end = rest.find(QUOTE_PAIRS[rest[0]], 1)
@@ -106,7 +109,6 @@ async def data_query(query, channel):
             else:
                 raw_cardname = rest[:end]
                 rest = rest[end:].strip()
-        print(raw_cardname)
 
         # Try get unique card from Scryfall
         try:
