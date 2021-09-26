@@ -9,6 +9,7 @@ import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
 from embed_maker import gen_card_embed, supported_color_strings
 from utils import format_data, get_card_name
+from set_info import DATA_CACHE, init_cache, fetch_format_data
 
 client = discord.Client()
 
@@ -28,8 +29,6 @@ FORMAT_MAPPING = {}
 for f in FORMATS:
     for s in FORMATS[f]:
         FORMAT_MAPPING[s] = f
-
-cache = {s: {f: {} for f in FORMATS} for s in SETS}
 
 DATA_COMMANDS = {
     'alsa': [('seen_count', '# Seen', True), ('avg_seen', 'ALSA', False)],
@@ -181,8 +180,6 @@ async def data_query(query, channel):
         elif ol.startswith('-c=') or ol.startswith('colors='):
             if colors is None:
                 colors = parse_colors(ol[ol.find('=')+1:])
-                if colors is not None and colors != 'all':
-                    can_use_cache = False
 
     # Set defaults if no options specified
     if len(formats) == 0:
@@ -219,45 +216,18 @@ async def data_query(query, channel):
         start_date = START_DATE
         result_description = f' up{result_description}'
 
-    # Calculate 17lands query string
-    query_str = f'&start_date={start_date}&end_date={end_date}'
-    if colors is not None and colors != 'all':
-        result_description = f' in {colors} decks{result_description}'
-        query_str += f'&colors={colors}'
-
     sent = []
     for s in sets:
         data_to_use = {}
         for f in formats:
             # Use data from the cache if possible
             if can_use_cache:
-                data_to_use[f] = cache[s][f]
-            elif f'{f}{query_str}' in cache[s]:
-                data_to_use[f] = cache[s][f'{f}{query_str}']
+                data_to_use[f] = DATA_CACHE[s][f][colors]
             else:
-                try:
-                    # Otherwise, query from 17lands and add the result to the cache
-                    data_to_use[f] = {}
-                    cache[s][f'{f}{query_str}'] = {}
-                    print(f'Fetching data for {s} {f}...')
-                    response = requests.get(
-                        'https://www.17lands.com/card_ratings/data?' +
-                        f'expansion={s}&format={f}{query_str}'
-                    )
-                    for c in response.json():
-                        data_to_use[f][c['name']] = c
-                        cache[s][f'{f}{query_str}'][c['name']] = c
-                    print('Success!')
-                except:
-                    await send_message(channel, f'Failed to fetch data for {s} {f} from 17lands')
+                data_to_use[f] = fetch_format_data(s, f, colors, start_date, end_date)
         for card in scryfall_cards:
             cardname = get_card_name(card)
             if cardname in data_to_use[formats[0]] and cardname not in sent:
-                # header = [s] + [f for f in formats]
-                # table = [[dc_name] + [
-                #     format_data(data_to_use[f][cardname][dc]) for f in formats
-                # ] for (dc, dc_name, v) in data_commands.values() if not v or verbose]
-                # tables[cardname] = [header] + table
                 sent.append(cardname)
 
                 await send_embed_message(channel, gen_card_embed(
@@ -270,37 +240,6 @@ async def data_query(query, channel):
                     end_date=end_date,
                     color_filter=(None if colors == 'all' else colors)
                 ))
-
-    # result = ''
-    # for card in scryfall_cards:
-    #     cardname = get_card_name(card)
-    #     if cardname not in tables:
-    #         result += f'Cannot find data for {cardname} in 17lands\n'
-    #         continue
-
-    #     t = tables[cardname]
-
-    #     result += f'Data for {cardname}{result_description}\n'
-    #     result += '```'
-    #     column_lengths = [0 for _ in t[0]]
-    #     for r in range(len(t)):
-    #         for cardname in range(len(t[0])):
-    #             column_lengths[cardname] = max(column_lengths[cardname], len(t[r][cardname]))
-
-    #     for c in range(len(t[0])):
-    #         result += t[0][c] + (column_lengths[c]+1-len(t[0][c]))*' ' + '| '
-    #     result += '\n'
-
-    #     result += '-' * (sum(column_lengths) + 2*len(column_lengths) + 1) + '\n'
-
-    #     for r in range(1, len(t)):
-    #         for c in range(len(t[0])):
-    #             result += t[r][c] + (column_lengths[c]+1-len(t[r][c]))*' ' + '| '
-    #         result += '\n'
-    #     result += '```\n'
-
-    # if result != '':
-    #     await send_message(channel, result)
 
 
 @client.event
@@ -340,7 +279,9 @@ async def on_message(message):
 
 @tasks.loop(hours=12)
 async def refresh_data():
-    fetch_data(UPDATING_SETS)
+    init_cache()
+    print(DATA_CACHE)
+    #fetch_data(UPDATING_SETS)
 
 def fetch_data(sets):
     for s in sets:
