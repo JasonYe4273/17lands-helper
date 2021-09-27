@@ -102,6 +102,9 @@ FILENAME = '{0}_{1}.json'  #'{set}_{format}.json'
 
 
 STAT_NAMES = {
+## "name",
+ "color" : "Color",
+ "rarity" : "Rarity",
  "seen_count" : "# Seen", 
  "avg_seen" : "ALSA", 
  "pick_count" : "# Picked", 
@@ -118,10 +121,7 @@ STAT_NAMES = {
  "ever_drawn_win_rate" : "GIH WR", 
  "never_drawn_game_count" : "# GND", 
  "never_drawn_win_rate" : "GND WR", 
- "drawn_improvement_win_rate" : "IWD",
-## "name",
- "color" : "Color",
- "rarity" : "Rarity"
+ "drawn_improvement_win_rate" : "IWD"
 ## "url",
 ## "url_back",
 }
@@ -195,6 +195,45 @@ def pandafy_cache():
                 frame = panadafy_dict(DATA_CACHE[s][f][c])
                 PANDAS_CACHE[s][f][c] = frame
 
+
+# Filters out cards that have a number of games played less than p% of # GP.
+def min_play_filter(df, p):
+    min_game = df['# GP'].mean() * (p/100)
+    return df[df['# GP'] >= min_game]
+
+
+# Filters out cards that don't fall within the colour identy.
+def color_id_filter(df, color_identity):
+    if color_identity is not None and color_identity != '':
+        return df[df['Color'].apply(lambda x: set(x) <= set(color_identity))]
+    else:
+        return df
+
+
+# Filters out cards that aren't in the given rarities.
+def rarity_filter(df, rarity):
+    if rarity is not None and rarity != '':
+        return df[df['Rarity'].apply(lambda x: set(x) <= set(rarity))]
+    else:
+        return df
+
+
+# Gets the top n cards, based on a particular stat column.
+# Can filter based on card colours, rarity.
+# Can get the bottom n cards with 'reverse=True'
+def get_top(df, col, n=5, card_colors=None, card_rarity=None, reverse=False):
+    filtered = min_play_filter(df, 10)
+    filtered = color_id_filter(filtered, card_colors)
+    filtered = rarity_filter(filtered, card_rarity)
+
+    # Functional XOR.
+    reverse = reverse != (col == "ALSA" or col == "ATA")
+    
+    # Return the smallest values if we're dealing with pick orders
+    if reverse != (col == "ALSA" or col == "ATA"):
+        return filtered.nsmallest(n, col)
+    else:
+        return filtered.nlargest(n, col)
 
 
 ### JSON Management ###

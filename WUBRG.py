@@ -121,9 +121,17 @@ def get_color_string(s):
     if (len(remainder) > 0):
         print(f'Invalid color string provded: {s}. Converting to "WUBRGC"')
         s = "WUBRGC"
-    
+
     return s
 
+
+def get_colour_identity(color_string):
+    char_set = set(color_string)
+    s = ''
+    for c in COLOR_ALIASES['All']:
+        if c in char_set:
+            s += c
+    return s
 
 COLOUR_GROUPS = [''] + [get_color_string(y) for x in COLOUR_GROUPINGS for y in COLOUR_GROUPINGS[x]] + ['WUBRG']
     
