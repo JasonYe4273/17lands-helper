@@ -9,6 +9,7 @@ import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
 from embed_maker import gen_card_embed, supported_color_strings
 from utils import format_data, get_card_name
+from set_info import DATA_CACHE, init_cache, fetch_format_data
 
 client = discord.Client()
 
@@ -58,12 +59,13 @@ async def send_message(channel, message):
 @client.event
 async def on_ready():
     WUBRG.cache_manamojis(client)
+    #init_cache()
     fetch_data(OLD_SETS)
     print('Logged in as {0.user}'.format(client))
 
 def parse_colors(colors_str):
     if colors_str == 'all':
-        return 'all'
+        return 'None'
     if colors_str.capitalize() in COLOR_ALIASES:
         return COLOR_ALIASES[colors_str.capitalize()]
     colors_exist = {'W': False, 'U': False, 'B': False, 'R': False, 'G': False}
@@ -231,10 +233,12 @@ async def data_query(query, channel):
         for f in formats:
             # Use data from the cache if possible
             if can_use_cache:
+                #data_to_use[f] = DATA_CACHE[s][f][colors]
                 data_to_use[f] = cache[s][f]
             elif f'{f}{query_str}' in cache[s]:
                 data_to_use[f] = cache[s][f'{f}{query_str}']
             else:
+                #data_to_use[f] = fetch_format_data(s, f, colors, start_date, end_date)
                 try:
                     # Otherwise, query from 17lands and add the result to the cache
                     data_to_use[f] = {}
@@ -253,11 +257,6 @@ async def data_query(query, channel):
         for card in scryfall_cards:
             cardname = get_card_name(card)
             if cardname in data_to_use[formats[0]] and cardname not in sent:
-                # header = [s] + [f for f in formats]
-                # table = [[dc_name] + [
-                #     format_data(data_to_use[f][cardname][dc]) for f in formats
-                # ] for (dc, dc_name, v) in data_commands.values() if not v or verbose]
-                # tables[cardname] = [header] + table
                 sent.append(cardname)
 
                 await send_embed_message(channel, gen_card_embed(
@@ -270,37 +269,6 @@ async def data_query(query, channel):
                     end_date=end_date,
                     color_filter=(None if colors == 'all' else colors)
                 ))
-
-    # result = ''
-    # for card in scryfall_cards:
-    #     cardname = get_card_name(card)
-    #     if cardname not in tables:
-    #         result += f'Cannot find data for {cardname} in 17lands\n'
-    #         continue
-
-    #     t = tables[cardname]
-
-    #     result += f'Data for {cardname}{result_description}\n'
-    #     result += '```'
-    #     column_lengths = [0 for _ in t[0]]
-    #     for r in range(len(t)):
-    #         for cardname in range(len(t[0])):
-    #             column_lengths[cardname] = max(column_lengths[cardname], len(t[r][cardname]))
-
-    #     for c in range(len(t[0])):
-    #         result += t[0][c] + (column_lengths[c]+1-len(t[0][c]))*' ' + '| '
-    #     result += '\n'
-
-    #     result += '-' * (sum(column_lengths) + 2*len(column_lengths) + 1) + '\n'
-
-    #     for r in range(1, len(t)):
-    #         for c in range(len(t[0])):
-    #             result += t[r][c] + (column_lengths[c]+1-len(t[r][c]))*' ' + '| '
-    #         result += '\n'
-    #     result += '```\n'
-
-    # if result != '':
-    #     await send_message(channel, result)
 
 
 @client.event
@@ -340,6 +308,8 @@ async def on_message(message):
 
 @tasks.loop(hours=12)
 async def refresh_data():
+    #init_cache()
+    #print(DATA_CACHE)
     fetch_data(UPDATING_SETS)
 
 def fetch_data(sets):

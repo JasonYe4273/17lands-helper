@@ -135,34 +135,6 @@ RARITY_ALIASES = {
 }
 
 
-FORMAT_ALIASES = {
-    'PremierDraft': ['bo1', 'premier', 'premierdraft'],
-    'TradDraft': ['bo3', 'trad', 'traditional', 'traddraft', 'traditionaldraft']
-    # 'QuickDraft': ['qd', 'quick', 'quickdraft'],
-    # 'Sealed': ['sealed', 'bo1sealed', 'sealedbo1'],
-    # 'TradSealed': ['tradsealed', 'bo3sealed', 'sealedbo3'],
-    # 'DraftChallenge': ['challenge', 'draftchallenge'],
-}
-
-FORMAT_MAPPING = {}
-for f in FORMATS:
-    for s in FORMAT_ALIASES[f]:
-        FORMAT_MAPPING[s] = f
-
-DATA_COMMANDS = {
-    'alsa': [('seen_count', '# Seen', True), ('avg_seen', 'ALSA', False)],
-    'ata': [('pick_count', '# Taken', True), ('avg_pick', 'ATA', False)],
-    'gp': [('game_count', '# GP', True), ('win_rate', 'GP WR', False)],
-    'gnp': [('sideboard_game_count', '# GNP', True), ('sideboard_win_rate', 'GNP WR', False)],
-    'oh': [('opening_hand_game_count', '# OH', True), ('opening_hand_win_rate', 'OH WR', False)],
-    'gd': [('drawn_game_count', '# GD', True), ('drawn_win_rate', 'GD WR', False)],
-    'gih': [('ever_drawn_game_count', '# GIH', True), ('ever_drawn_win_rate', 'GIH WR', False)],
-    'gnd': [('never_drawn_game_count', '# GND', True), ('never_drawn_win_rate', 'GND WR', False)],
-    'iwd': [('drawn_improvement_win_rate', 'IWD', False)]
-}
-DATA_COMMANDS['drafts'] = DATA_COMMANDS['alsa'] + DATA_COMMANDS['ata']
-DATA_COMMANDS['games'] = DATA_COMMANDS['gp'] + DATA_COMMANDS['gnp'] + DATA_COMMANDS['oh'] + DATA_COMMANDS['gd'] + DATA_COMMANDS['gih'] + DATA_COMMANDS['gnd'] + DATA_COMMANDS['iwd']
-DATA_COMMANDS['data'] = DATA_COMMANDS['drafts'] + DATA_COMMANDS['games']
 
 
 DATA_CACHE = get_set_tree()
@@ -298,7 +270,11 @@ def to_update(s, f):
             print(f"{s} {f} is live, and new data should exist. Signaling update...")
             return True
 
-        edit_date = datetime.fromtimestamp(os.path.getmtime(os.path.join(DATA_DIR, FILENAME.format(s, f))))
+        try:
+            edit_date = datetime.fromtimestamp(os.path.getmtime(os.path.join(DATA_DIR, FILENAME.format(s, f))))
+        except:
+            # Should update if can't find file
+            return True
         edit_diff = cur_date - edit_date
         # Or, if the file is over 24hrs old, update it.
         if edit_diff >= timedelta(days=1):
@@ -311,12 +287,17 @@ def to_update(s, f):
 
 
 # Fetches all the data for a given set and format, using an optional colour filter.
-def fetch_format_data(s, f, c = ''):
+def fetch_format_data(s, f, c = 'None', start_date = None, end_date = None):
     success = False
     count = 0
 
-    if c == None or c == '':
+    if c is None or c == 'None':
         c = 'No Filter'
+
+    if start_date is None:
+        start_date = START_DATE
+    if end_date is None:
+        end_date = date.today()
     
     while not success:
         count += 1
@@ -324,7 +305,7 @@ def fetch_format_data(s, f, c = ''):
         
         try:
             url_base = 'https://www.17lands.com/card_ratings/data?'
-            url_append = f'expansion={s}&format={f}&start_date={START_DATE}&end_date={date.today()}'
+            url_append = f'expansion={s}&format={f}&start_date={start_date}&end_date={end_date}'
             colour_filter = ''
             if c != 'No Filter':
                 colour_filter = f'&colors={c}'
@@ -428,6 +409,16 @@ def init_cache():
     update_cache(update_dict)
 
 
+def query_cache(_set, _format, color_filter, cardname):
+    if _set not in DATA_CACHE:
+        return None
+    if _format not in DATA_CACHE[_set]:
+        return None
+    if color_filter not in DATA_CACHE[_set][_format]:
+        return None
+    if cardname not in DATA_CACHE[_set][_format][color_filter]:
+        return None
+    return DATA_CACHE[_set][_format][color_filter][cardname]
 
 ### Data Analysis ###
 
