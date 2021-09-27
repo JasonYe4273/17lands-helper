@@ -1,10 +1,12 @@
 import os
 import json
 import requests
-import time
+from time import sleep
 from datetime import date, time, datetime, timedelta
+import numpy as np
+import pandas as pd
 import WUBRG
-from WUBRG import MAIN_COLOUR_GROUPS
+from WUBRG import COLOUR_GROUPS
 
 # TODO: Make this a json object which is routinely checked.
 # This will enable format updates without having to completely recompile the bot.
@@ -77,37 +79,61 @@ SET_CONFIG = {
     }
 }
 
-SETS = ['MID', 'AFR']
+##SETS = ['MID', 'AFR']
+SETS = ['MID']
 FORMATS = ['PremierDraft', 'TradDraft']
 #FORMATS = ['PremierDraft', 'TradDraft', 'QuickDraft', 'Sealed', 'TradSealed', 'DraftChallenge
-SET_TREE = dict()
-for s in SETS:
-    SET_TREE[s] = dict()
-    for f in FORMATS:
-        SET_TREE[s][f] = None
+
+def get_set_tree():
+    SET_TREE = dict()
+    for s in SETS:
+        SET_TREE[s] = dict()
+        for f in FORMATS:
+            SET_TREE[s][f] = dict()
+            for c in COLOUR_GROUPS:
+                SET_TREE[s][f][c] = None
+    return SET_TREE
 
 
 START_DATE = '2021-01-01'
 DATA_DIR = os.path.join(os.getcwd(), "17_lands_data")
 FILENAME = '{0}_{1}.json'  #'{set}_{format}.json'
-STAT_NAMES = [
- "seen_count", 
- "avg_seen", 
- "pick_count", 
- "avg_pick", 
- "game_count", 
- "win_rate", 
- "sideboard_game_count", 
- "sideboard_win_rate", 
- "opening_hand_game_count", 
- "opening_hand_win_rate", 
- "drawn_game_count", 
- "drawn_win_rate", 
- "ever_drawn_game_count", 
- "ever_drawn_win_rate", 
- "never_drawn_game_count", 
- "never_drawn_win_rate", 
- "drawn_improvement_win_rate"]
+
+
+
+STAT_NAMES = {
+ "seen_count" : "# Seen", 
+ "avg_seen" : "ALSA", 
+ "pick_count" : "# Picked", 
+ "avg_pick" : "ATA", 
+ "game_count" : "# GP", 
+ "win_rate" : "GP WR", 
+## "sideboard_game_count" : "Sideboard Games", 
+## "sideboard_win_rate" : "SWR", 
+ "opening_hand_game_count" : "# OH", 
+ "opening_hand_win_rate" : "OH WR", 
+ "drawn_game_count" : "# GD", 
+ "drawn_win_rate" : "GD WR", 
+ "ever_drawn_game_count" : "# GIH", 
+ "ever_drawn_win_rate" : "GIH WR", 
+ "never_drawn_game_count" : "# GND", 
+ "never_drawn_win_rate" : "GND WR", 
+ "drawn_improvement_win_rate" : "IWD",
+## "name",
+ "color" : "Color",
+ "rarity" : "Rarity"
+## "url",
+## "url_back",
+}
+PERCENTS = ["GP WR", "OH WR", "GD WR", "GIH WR", "GND WR", "IWD"]
+
+RARITY_ALIASES = {
+    'common': "C",
+    'uncommon': "U",
+    'rare': "R",
+    'mythic': "M"
+}
+
 
 FORMAT_ALIASES = {
     'PremierDraft': ['bo1', 'premier', 'premierdraft'],
@@ -139,7 +165,7 @@ DATA_COMMANDS['games'] = DATA_COMMANDS['gp'] + DATA_COMMANDS['gnp'] + DATA_COMMA
 DATA_COMMANDS['data'] = DATA_COMMANDS['drafts'] + DATA_COMMANDS['games']
 
 
-DATA_CACHE = dict()
+DATA_CACHE = get_set_tree()
 ##{
 ##"SET" : {
 ##    "FORMAT" : {
@@ -154,6 +180,14 @@ DATA_CACHE = dict()
 ##    }
 ##}
 
+PANDAS_CACHE = get_set_tree()
+##{
+##"SET" : {
+##    "FORMAT" : {
+##        "COLOURS" : <pandas.DataFrame>
+##        }
+##    }
+##}
 
 def fetch_bot_data():
     # TODO: Fill this out to pull .config data to update the bot on the fly.
@@ -161,11 +195,41 @@ def fetch_bot_data():
 
 
 
+### Pandas Helpers ###
+
+def panadafy_dict(d):
+    frame = pd.DataFrame.from_dict(d, orient='index')
+    frame = frame.rename(columns=STAT_NAMES)
+    
+    # If there's no data, make a blank frame and return it.
+    if len(d) == 0:
+        return frame
+    
+    for col in PERCENTS:
+        frame[col] = frame[col] * 100
+    
+    frame['Rarity'] = frame['Rarity'].map(RARITY_ALIASES)
+    frame = frame.round(3)
+    return frame
+
+
+def pandafy_cache():
+    global PANDAS_CACHE
+    PANDAS_CACHE = get_set_tree()
+    for s in SETS:
+        for f in FORMATS:
+            for c in COLOUR_GROUPS:
+                #print(f"Framing {s} {f} {c}'s {str(len(DATA_CACHE[s][f][c]))} cards...")
+                frame = panadafy_dict(DATA_CACHE[s][f][c])
+                PANDAS_CACHE[s][f][c] = frame
+
+
+
 ### JSON Management ###
 
 # Reads the json file for a given set and returns a dict which represent the cards.
 def read_set_data(s, f):
-    format_dict = { c : dict() for c in MAIN_COLOUR_GROUPS }
+    format_dict = { c : dict() for c in COLOUR_GROUPS }
     filename = FILENAME.format(s, f)
     filepath = os.path.join(DATA_DIR, filename)
     print(f'Parsing {filename}...')
@@ -189,13 +253,13 @@ def save_set_data(s, f):
     filename = FILENAME.format(s, f)
 
     # Query 17 lands for each colour filter.
-    for c in MAIN_COLOUR_GROUPS:
+    for c in COLOUR_GROUPS:
         success = False
         count = 0
         
         json_colour = fetch_format_data(s, f, c)
         json_out[c] = json_colour
-        time.sleep(3)
+        sleep(3)
 
 
     # Convert the aggreate dictionary into a .json file, and save it.       
@@ -215,7 +279,13 @@ def save_set_data(s, f):
 
 # Returns true is the data for a set format should be updated.
 def to_update(s, f):
-    # If the format is live,
+    # If the data doesn't exist,
+    if not os.path.isfile(os.path.join(DATA_DIR, FILENAME.format(s, f))):
+        # Signal for an update.
+        print(f"{s} {f} doesn't exist. Signaling update...")
+        return True
+    
+    # Or, if the format is live,
     if SET_CONFIG[s][f]['Updating']:
         time_range_start = time(0, 55)
         time_range_end = time(2, 0)
@@ -230,28 +300,22 @@ def to_update(s, f):
 
         edit_date = datetime.fromtimestamp(os.path.getmtime(os.path.join(DATA_DIR, FILENAME.format(s, f))))
         edit_diff = cur_date - edit_date
-        # If the file is over 24hrs old, update it.
+        # Or, if the file is over 24hrs old, update it.
         if edit_diff >= timedelta(days=1):
             # Signal for an update.
             print(f"{s} {f} is over 24hrs old. Signaling update...")
             return True
 
-    # Or if the format is dead, but the data doesn't exist.
-    if not os.path.isfile(os.path.join(DATA_DIR, FILENAME.format(s, f))):
-        # Signal for an update.
-        print(f"{s} {f} doesn't exist. Signaling update...")
-        return True
-
-    # Skip the update.
+    # Otherwise, skip the update.
     return False
 
 
 # Fetches all the data for a given set and format, using an optional colour filter.
-def fetch_format_data(s, f, c = 'None'):
+def fetch_format_data(s, f, c = ''):
     success = False
     count = 0
 
-    if c == None or c == 'None':
+    if c == None or c == '':
         c = 'No Filter'
     
     while not success:
@@ -273,7 +337,7 @@ def fetch_format_data(s, f, c = 'None'):
         except:
             if count < 5:
                 print('Failed; trying again in 30s')
-                time.sleep(30)
+                sleep(30)
                 continue
             else:
                 print(f'Failed to get data after 5 attempts. File {filename} not created')
@@ -293,14 +357,14 @@ def fetch_format_data(s, f, c = 'None'):
 # Fetch all the data for sets and fomats, controlled by SET_CONFIG
 def fetch_all_data():
     print(f'Checking for new format data...')
-    update_dict = dict(SET_TREE)
+    update_dict = get_set_tree()
     
     for s in SETS:
         for f in FORMATS:
             if to_update(s, f):
                 update_dict[s][f] = True
                 save_set_data(s, f)
-                time.sleep(60)
+                sleep(60)
             else:
                 update_dict[s][f] = False
                 print(f'{s} {f} data is up to date!')
@@ -315,7 +379,7 @@ def fetch_all_data():
 # Creates an empty cache structure for the card data.
 def blank_cache():
     global DATA_CACHE
-    new_cache = dict(SET_TREE)
+    new_cache = get_set_tree()
     for s in SETS:
         for f in FORMATS:
             new_cache[s][f] = dict()
@@ -325,10 +389,11 @@ def blank_cache():
 
 # Updates the cards data cache with data from the .json files.
 def update_cache(update_dict):
+    global DATA_CACHE
     print(f'Checking for cache updates...')
     
-    global DATA_CACHE
-    # Create a copy of the current cache to modify/
+    # Create a copy of the current cache to modify.
+
     new_cache = dict(DATA_CACHE)
 
     # For each format in the set, check for a go-ahead to refresh the data.
@@ -336,13 +401,14 @@ def update_cache(update_dict):
         for f in FORMATS:
             if update_dict[s][f]:
                 # If allowed, get the data from the json file, and add it to the temp chache.
-                format_dict = read_set_data(s, f)
-                new_cache[s][f] = format_dict
+                new_cache[s][f] = read_set_data(s, f)
                 print(f'{s} {f} added to DATA_CACHE!')
 
     # Overwite the main cache with the temp cache.
     DATA_CACHE = new_cache
     print(f'Done checking for cache updates.\r\n')
+    pandafy_cache()
+
 
 
 def init_cache():
@@ -353,13 +419,17 @@ def init_cache():
     blank_cache()
 
     # Create an update dict which update the entire cache.
-    update_dict = dict(SET_TREE)
+    update_dict = get_set_tree()
     for s in SETS:
         for f in FORMATS:
             update_dict[s][f] = True
 
     # And update the cache.
     update_cache(update_dict)
+
+
+
+### Data Analysis ###
 
 
 

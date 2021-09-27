@@ -1,4 +1,7 @@
-import discord
+try:
+    import discord
+except:
+    print("WRANING: 'discord' failed to import. Emoji support unavailable")
 
 # Used to populate the emojis which represent mana costs and set symbols.
 # Note, not calling this means no emojis will be found, and embeds will be emojiless.
@@ -13,6 +16,8 @@ def cache_manamojis(client):
     #global SETMOJIS
     #SETMOJIS = [emo for emo in client.emojis if emo.name.startswith('set')]
     #print(f'{len(SETMOJIS)} setmojis found!')
+
+
 
 ### Colour Mapping ###
     
@@ -64,24 +69,40 @@ COLOR_ALIASES_SUPPORT = {
          'Naya' : "WRG",
          'Grixis' : "UBR",
          'Jund' : "BRG"
+    },
+    'Nephillim' : {
+        'Yore' : "WUBR",
+         'Witch' : "WUBG",
+         'Ink' : "WURG",
+         'Dune' : "WBRG",
+         'Glint' : "UBRG"
     }
 }
 
 
 # Merging all of the supported colour-sets.
-COLOR_ALIASES = {'5-Color' : "WUBRG", 'All' : "WUBRGC", 'None' : "None"}
+COLOR_ALIASES = {
+    '5-Color' : "WUBRG",
+    'All' : "WUBRGC",
+    'None' : ""
+}
+
 for d in COLOR_ALIASES_SUPPORT:
-    COLOR_ALIASES = COLOR_ALIASES | COLOR_ALIASES_SUPPORT[d]
+    #COLOR_ALIASES = COLOR_ALIASES | COLOR_ALIASES_SUPPORT[d]
+    COLOR_ALIASES = {**COLOR_ALIASES, **COLOR_ALIASES_SUPPORT[d]}
 
 
 # Lists of alais based on the number of colours.
 COLOUR_GROUPINGS = {
-    'Mono-Color': ['White', 'Blue', 'Black', 'Red', 'Green'],
-    'Two-Color': ['Azorius', 'Orzhov', 'Boros', 'Selesnya', 'Dimir', 'Izzet', 'Simic', 'Rakdos', 'Golgari', 'Gruul'],
-    'Three-Color': ['Jeksai', 'Mardu', 'Abzan', 'Sultai', 'Temur', 'Esper', 'Bant', 'Naya', 'Grixis', 'Jund']
+    'Mono-Color': COLOR_ALIASES_SUPPORT['Colors'],
+    'Two-Color': COLOR_ALIASES_SUPPORT['Guilds'],
+    #'Three-Color': COLOR_ALIASES_SUPPORT['Wedges'] | COLOR_ALIASES_SUPPORT['Shards'],
+    'Three-Color': {**COLOR_ALIASES_SUPPORT['Wedges'], **COLOR_ALIASES_SUPPORT['Shards']},
+    'Four-Color': COLOR_ALIASES_SUPPORT['Nephillim'],
 }
 
-MAIN_COLOUR_GROUPS = [''] # Filled below
+
+COLOUR_GROUPS = [''] # Filled below
 
 
 # Takes in a string, and attempts to convert it to a color_string.
@@ -104,10 +125,8 @@ def get_color_string(s):
     return s
 
 
-
-MAIN_COLOUR_GROUPS = ['None'] + [get_color_string(y) for x in COLOUR_GROUPINGS for y in COLOUR_GROUPINGS[x]]
-
-
+COLOUR_GROUPS = [''] + [get_color_string(y) for x in COLOUR_GROUPINGS for y in COLOUR_GROUPINGS[x]] + ['WUBRG']
+    
 
 # Takes in a valid colour string, or colour string alias,
 # and then returns a dictionary of booleans.
@@ -128,6 +147,7 @@ def get_color_map(color_str):
 
 
 ### Emojis ###
+
 # To automatically grab server emojis installed from
 # https://github.com/scryfall/manamoji-discord/tree/main/emojis
 def get_emoji(emoji_str):
