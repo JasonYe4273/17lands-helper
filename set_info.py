@@ -185,6 +185,7 @@ def panadafy_dict(d):
     frame = frame.round(3)
     return frame
 
+
 # Creates a copy of the cache, except using DataFrames instead of dicts for card data.
 def pandafy_cache():
     global PANDAS_CACHE
@@ -238,14 +239,19 @@ def get_top(df, col, n=5, card_colors=None, card_rarity=None, min_thresh=10, rev
 
 
 # Gets a suite of data about the given colour's position in the metagame.
-def get_color_metadata(s, f, color, stat='GIH WR'):   
-    top_commons = get_top(PANDAS_CACHE[s][f][''], stat, n=10, card_colors=color, card_rarity='C')
-    top_commons.columns.name = f'Top 10 Commons'
-    top_uncommons = get_top(PANDAS_CACHE[s][f][''], stat, n=10, card_colors=color, card_rarity='U')
-    top_uncommons.columns.name = f'Top 10 Uncommons'
+def get_color_metadata(s, f, color, stat='GIH WR', columns=None):
+    df = PANDAS_CACHE[s][f]['']
+    if columns == None:
+        columns = list(df)
     
-    # TODO: Generate four colour pairs containing the main color
-    color_pairs = ['UW', 'UB', 'UR', 'UG']
+    top_commons = get_top(df, stat, n=10, card_colors=color, card_rarity='C')
+    top_commons.columns.name = f'Top 10 {color} Commons'
+    top_commons = top_commons[columns]
+    top_uncommons = get_top(df, stat, n=10, card_colors=color, card_rarity='U')
+    top_uncommons.columns.name = f'Top 10 {color} Uncommons'
+    top_uncommons = top_uncommons[columns]
+    
+    color_pairs = [color + x for x in COLORS if x != color]
     color_pair_dfs = dict()
     
     for col in color_pairs:
@@ -254,6 +260,7 @@ def get_color_metadata(s, f, color, stat='GIH WR'):
         uncommons = get_top(PANDAS_CACHE[s][f][c], stat, n=5, card_rarity='U')
         df = pd.concat([commons, uncommons])
         df.columns.name = f'{col} Top Cards'
+        df = df[columns]
         color_pair_dfs[c] = df
         
     # TODO: Add in a fun fact here.

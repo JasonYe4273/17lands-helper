@@ -20,6 +20,8 @@ def cache_manamojis(client):
 
 
 ### Colour Mapping ###
+COLORS = "WUBRG"
+
     
 # Groupings of colour-sets supported.
 COLOR_ALIASES_SUPPORT = {
