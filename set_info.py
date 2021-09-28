@@ -169,6 +169,7 @@ def fetch_bot_data():
 
 ### Pandas Helpers ###
 
+# Converts a dict of cards stats into a a DataFrame
 def panadafy_dict(d):
     frame = pd.DataFrame.from_dict(d, orient='index')
     frame = frame.rename(columns=STAT_NAMES)
@@ -184,7 +185,7 @@ def panadafy_dict(d):
     frame = frame.round(3)
     return frame
 
-
+# Creates a copy of the cache, except using DataFrames instead of dicts for card data.
 def pandafy_cache():
     global PANDAS_CACHE
     PANDAS_CACHE = get_set_tree()
@@ -203,9 +204,9 @@ def min_play_filter(df, p):
 
 
 # Filters out cards that don't fall within the colour identy.
-def color_id_filter(df, color_identity):
-    if color_identity is not None and color_identity != '':
-        return df[df['Color'].apply(lambda x: set(x) <= set(color_identity))]
+def color_id_filter(df, color_string):
+    if color_string is not None and color_string != '':
+        return df[df['Color'].apply(lambda x: set(x) <= set(color_string))]
     else:
         return df
 
@@ -221,8 +222,8 @@ def rarity_filter(df, rarity):
 # Gets the top n cards, based on a particular stat column.
 # Can filter based on card colours, rarity.
 # Can get the bottom n cards with 'reverse=True'
-def get_top(df, col, n=5, card_colors=None, card_rarity=None, reverse=False):
-    filtered = min_play_filter(df, 10)
+def get_top(df, col, n=5, card_colors=None, card_rarity=None, min_thresh=10, reverse=False):
+    filtered = min_play_filter(df, min_thresh)
     filtered = color_id_filter(filtered, card_colors)
     filtered = rarity_filter(filtered, card_rarity)
 
@@ -234,6 +235,31 @@ def get_top(df, col, n=5, card_colors=None, card_rarity=None, reverse=False):
         return filtered.nsmallest(n, col)
     else:
         return filtered.nlargest(n, col)
+
+
+# Gets a suite of data about the given colour's position in the metagame.
+def get_color_metadata(s, f, color, stat='GIH WR'):   
+    top_commons = get_top(PANDAS_CACHE[s][f][''], stat, n=10, card_colors=color, card_rarity='C')
+    top_commons.columns.name = f'Top 10 Commons'
+    top_uncommons = get_top(PANDAS_CACHE[s][f][''], stat, n=10, card_colors=color, card_rarity='U')
+    top_uncommons.columns.name = f'Top 10 Uncommons'
+    
+    # TODO: Generate four colour pairs containing the main color
+    color_pairs = ['UW', 'UB', 'UR', 'UG']
+    color_pair_dfs = dict()
+    
+    for col in color_pairs:
+        c = WUBRG.get_color_identity(col)
+        commons = get_top(PANDAS_CACHE[s][f][c], stat, n=5, card_rarity='C')
+        uncommons = get_top(PANDAS_CACHE[s][f][c], stat, n=5, card_rarity='U')
+        df = pd.concat([commons, uncommons])
+        df.columns.name = f'{col} Top Cards'
+        color_pair_dfs[c] = df
+        
+    # TODO: Add in a fun fact here.
+        
+    return (top_commons, top_uncommons, color_pair_dfs)
+
 
 
 ### JSON Management ###
@@ -330,7 +356,7 @@ def fetch_format_data(s, f, c = 'None', start_date = None, end_date = None):
     success = False
     count = 0
 
-    if c is None or c == 'None':
+    if c is None or c == 'None' or c == "":
         c = 'No Filter'
 
     if start_date is None:

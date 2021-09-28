@@ -125,13 +125,32 @@ def get_color_string(s):
     return s
 
 
-def get_colour_identity(color_string):
+def get_color_identity(color_string):
     char_set = set(color_string)
     s = ''
     for c in COLOR_ALIASES['All']:
         if c in char_set:
             s += c
     return s
+
+
+def get_color_alias(color_string):
+    color_identity = get_color_identity(color_string)
+    if color_identity == 'WUBRG':
+        return '5-Colour'
+    elif color_identity == 'All':
+        return ''
+
+    
+    for g in COLOUR_GROUPINGS:
+        for c in COLOUR_GROUPINGS[g]:
+            if color_identity == get_color_string(c):
+                alias = c
+                if len(color_identity) == 1:
+                    alias = 'Mono-' + alias
+                return alias
+    
+    
 
 COLOUR_GROUPS = [''] + [get_color_string(y) for x in COLOUR_GROUPINGS for y in COLOUR_GROUPINGS[x]] + ['WUBRG']
     
