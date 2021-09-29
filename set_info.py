@@ -6,7 +6,7 @@ from datetime import date, time, datetime, timedelta
 import numpy as np
 import pandas as pd
 import WUBRG
-from WUBRG import COLOUR_GROUPS
+from WUBRG import COLOUR_GROUPS, COLORS
 
 # TODO: Make this a json object which is routinely checked.
 # This will enable format updates without having to completely recompile the bot.
@@ -126,6 +126,7 @@ STAT_NAMES = {
 ## "url_back",
 }
 PERCENTS = ["GP WR", "OH WR", "GD WR", "GIH WR", "GND WR", "IWD"]
+COLUMNS_TRUNC = ["Color", "Rarity", "ALSA", "# GP", "GP WR", "# GIH", "GIH WR"]
 
 RARITY_ALIASES = {
     'common': "C",
@@ -160,6 +161,17 @@ PANDAS_CACHE = get_set_tree()
 ##        }
 ##    }
 ##}
+
+WINRATES = get_set_tree()
+##{
+##"SET" : {
+##    "FORMAT" : {
+##        "COLOURS" : Winrate (xx.xx)
+##        }
+##    }
+##}
+
+METAGAME_REPORT = get_set_tree()
 
 def fetch_bot_data():
     # TODO: Fill this out to pull .config data to update the bot on the fly.
@@ -198,11 +210,13 @@ def pandafy_cache():
                 PANDAS_CACHE[s][f][c] = frame
 
 
+
+### Pandas Filters ###
+
 # Filters out cards that have a number of games played less than p% of # GP.
 def min_play_filter(df, p):
-    min_game = df['# GP'].mean() * (p/100)
+    min_game = df['# GP'].sum() * (p/100)
     return df[df['# GP'] >= min_game]
-
 
 # Filters out cards that don't fall within the colour identy.
 def color_id_filter(df, color_string):
@@ -210,7 +224,6 @@ def color_id_filter(df, color_string):
         return df[df['Color'].apply(lambda x: set(x) <= set(color_string))]
     else:
         return df
-
 
 # Filters out cards that aren't in the given rarities.
 def rarity_filter(df, rarity):
@@ -220,52 +233,156 @@ def rarity_filter(df, rarity):
         return df
 
 
+
+### Card Metagame Functions ###
+
+# Returns a tuple with winrate, games won, and games played
+def color_game_counts(s, f, c, color_filter = None):
+    df = PANDAS_CACHE[s][f][c]
+    if df.empty:
+        return (np.nan, np.nan, np.nan)
+    
+    df = color_id_filter(df, color_filter)
+    df = df[['# GP','GP WR']]
+    games_played = df['# GP'].sum()
+    games_won = (df['# GP'] * (df['GP WR'] * 0.01)).sum().round()
+    percent_won = ((games_won  * 100)/ games_played).round(2)
+    return (percent_won, games_won, games_played)
+
+
+# Populates WINRATES with data.
+def get_color_win_rates():
+    win_rates = get_set_tree()
+    for s in SETS:
+        for f in FORMATS:
+            for c in COLOUR_GROUPS:
+                win_rates[s][f][c] = color_game_counts(s,f,c)
+    global WINRATES
+    WINRATES = win_rates
+
+
 # Gets the top n cards, based on a particular stat column.
 # Can filter based on card colours, rarity.
 # Can get the bottom n cards with 'reverse=True'
-def get_top(df, col, n=5, card_colors=None, card_rarity=None, min_thresh=10, reverse=False):
-    filtered = min_play_filter(df, min_thresh)
-    filtered = color_id_filter(filtered, card_colors)
-    filtered = rarity_filter(filtered, card_rarity)
+def get_top(df, stat, n=5, card_colors=None, card_rarity=None, min_thresh=1, reverse=False, columns=None):
+    if df.empty:
+        return df
 
-    # Functional XOR.
-    reverse = reverse != (col == "ALSA" or col == "ATA")
-    
-    # Return the smallest values if we're dealing with pick orders
-    if reverse != (col == "ALSA" or col == "ATA"):
-        return filtered.nsmallest(n, col)
-    else:
-        return filtered.nlargest(n, col)
-
-
-# Gets a suite of data about the given colour's position in the metagame.
-def get_color_metadata(s, f, color, stat='GIH WR', columns=None):
-    df = PANDAS_CACHE[s][f]['']
     if columns == None:
         columns = list(df)
     
-    top_commons = get_top(df, stat, n=10, card_colors=color, card_rarity='C')
-    top_commons.columns.name = f'Top 10 {color} Commons'
-    top_commons = top_commons[columns]
-    top_uncommons = get_top(df, stat, n=10, card_colors=color, card_rarity='U')
-    top_uncommons.columns.name = f'Top 10 {color} Uncommons'
-    top_uncommons = top_uncommons[columns]
+    filtered = color_id_filter(df, card_colors)
+    filtered = rarity_filter(filtered, card_rarity)
+    filtered = min_play_filter(filtered, min_thresh)
+
+    # Functional XOR.
+    reverse = reverse != (stat == "ALSA" or stat == "ATA")
     
-    color_pairs = [color + x for x in COLORS if x != color]
-    color_pair_dfs = dict()
+    title = ""
+    # Return the smallest values if we're dealing with pick orders
+    if reverse:
+        filtered = filtered.nsmallest(n, stat)
+        #title = f"Bottom {n} cards by '{stat}'"
+    else:
+        filtered = filtered.nlargest(n, stat)
+        #title = f"Top {n} cards by '{stat}'"
     
+    # TODO: Give a clearer idea of the restrictions on the data in the DataFrame.
+    #c_filter = f"\r\nColours: '{card_colors}'" if card_colors is not None else ""
+    #r_filter = f"\r\nRarities: '{card_rarity}'" if card_colors is not None else ""
+    
+    #filtered.columns.name = title + c_filter + r_filter
+    filtered.columns.name = f"'Top {n} by {stat}'"
+    filtered = filtered[columns]
+    return filtered
+
+
+def gen_metadata_dict():
+    ret = {
+        'Winrate' : None,
+        'Winrate Delta' : None,
+        'Games Played' : None, 
+        'Metagame Share' : None,
+        'Top Commons' : None,
+        'Top Uncommons' : None
+    }
+    return ret
+
+
+# Get metagame data for a given colour group.
+def get_color_group_metadata(s, f, colors, n=5, stat='GIH WR', columns=None):
+    # Set up the data.
+    c = WUBRG.get_color_identity(colors)
+    metagame_data = gen_metadata_dict()
+    
+    # Get the frame, and handle column filtering.
+    df = PANDAS_CACHE[s][f][c]
+    if columns == None:
+        columns = list(df)
+    
+    # Get the overall stats, and the stats for the colour group.
+    overall_games = color_game_counts(s, f, '')
+    color_games = color_game_counts(s, f, c)
+    
+    # Use those stats to get high-level stats for the colours.
+    metagame_data['Winrate'] = color_games[0]
+    metagame_data['Winrate Delta'] = (color_games[0] - overall_games[0]).round(2)
+    metagame_data['Games Played'] = color_games[2]
+    metagame_data['Metagame Share'] = ((color_games[2] / overall_games[2]) * 100).round(2)
+    
+    # Get top commons and uncommons for the colour group.
+    metagame_data['Top Commons'] = get_top(df, stat, n=n, card_rarity='C', columns=columns)
+    metagame_data['Top Uncommons'] = get_top(df, stat, n=n, card_rarity='U', columns=columns)
+        
+    return metagame_data
+
+
+# Gets a suite of data about the given colour's position in the metagame.
+def get_color_overview(s, f, main_color, stat='GIH WR', columns=None):
+    # Set up the data.
+    metagame_dict = dict()
+    metagame_data = gen_metadata_dict()
+    metagame_dict[main_color] = metagame_data
+    
+    # Get the frame, and handle column filtering.
+    df = PANDAS_CACHE[s][f]['']    
+    if columns == None:
+        columns = list(df)
+    
+    # Get the overall stats, and the stats filtered on the main_colour.
+    overall_games = color_game_counts(s, f, '')
+    color_games = color_game_counts(s, f, '', main_color)
+    
+    # Use those stats to get high-level stats for the colours.
+    metagame_data['Winrate'] = color_games[0]
+    metagame_data['Winrate Delta'] = (color_games[0] - overall_games[0]).round(2)
+    metagame_data['Games Played'] = color_games[2]
+    metagame_data['Metagame Share'] = ((color_games[2] / overall_games[2]) * 100).round(2)
+    
+    # Get top commons and uncommons for the main_colour
+    metagame_data['Top Commons'] = get_top(df, stat, n=10, card_colors=main_color, card_rarity='C', columns=columns)
+    metagame_data['Top Uncommons'] = get_top(df, stat, n=10, card_colors=main_color, card_rarity='U', columns=columns)
+    
+    # Get the metagame data for all colour pairs that contain 'color'.
+    color_pairs = [main_color + x for x in COLORS if x != main_color]
     for col in color_pairs:
         c = WUBRG.get_color_identity(col)
-        commons = get_top(PANDAS_CACHE[s][f][c], stat, n=5, card_rarity='C')
-        uncommons = get_top(PANDAS_CACHE[s][f][c], stat, n=5, card_rarity='U')
-        df = pd.concat([commons, uncommons])
-        df.columns.name = f'{col} Top Cards'
-        df = df[columns]
-        color_pair_dfs[c] = df
+        metagame_dict[c] = get_color_group_metadata(s, f, c, stat=stat, columns=columns)
         
     # TODO: Add in a fun fact here.
         
-    return (top_commons, top_uncommons, color_pair_dfs)
+    return metagame_dict
+
+
+# Gets an overview of the metagame data and saves it to METAGAME_REPORT
+def get_format_metagame_data(s, f, stat='GIH WR', columns=None):
+    report = get_set_tree()
+    for s in SETS:
+        for f in FORMATS:
+            for c in COLOUR_GROUPS:
+                report[s][f][c] = get_color_overview(s, f, c, stat=stat, columns=columns)
+    global METAGAME_REPORT
+    METAGAME_REPORT = report
 
 
 
@@ -440,7 +557,8 @@ def blank_cache():
     DATA_CACHE = new_cache
 
 
-# Updates the cards data cache with data from the .json files.
+# Updates the cards data cache with data from the .json files,
+# and any data that relies on that cache.
 def update_cache(update_dict):
     global DATA_CACHE
     print(f'Checking for cache updates...')
@@ -461,7 +579,7 @@ def update_cache(update_dict):
     DATA_CACHE = new_cache
     print(f'Done checking for cache updates.\r\n')
     pandafy_cache()
-
+    get_color_win_rates()
 
 
 def init_cache():
@@ -492,10 +610,9 @@ def query_cache(_set, _format, color_filter, cardname):
         return None
     return DATA_CACHE[_set][_format][color_filter][cardname]
 
-### Data Analysis ###
-
 
 
 if __name__ == "__main__":
     init_cache()
+    get_format_metagame_data('MID', 'PremierDraft')
     pass
