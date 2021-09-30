@@ -52,7 +52,7 @@ COLOR_ALIASES_SUPPORT = {
          'Witherbloom' : "BG"
     },
     'Wedges' : {
-        'Jeksai' : "WUR",
+        'Jeskai' : "WUR",
          'Mardu' : "WBR",
          'Abzan' : "WBG",
          'Sultai' : "UBG",
@@ -172,6 +172,32 @@ def get_color_map(color_str):
         colors_exist[c] = True
 
     return colors_exist
+
+
+# Gets all of the colour groups that contain 'color_id'.
+# 'l' can be used to place a maximum on number of colours in groups returned.
+def get_color_supersets(color_id, l=5):
+    colour_ids = list()
+    
+    cis = set(WUBRG.get_color_string(color_id))
+    for c in COLOUR_GROUPS:       
+        if len(c) <= l and cis < set(c):
+            colour_ids.append(c)
+    
+    return colour_ids
+
+
+# Gets all of the colour groups that are contained in 'color_id'.
+# 'l' can be used to place a minimum on number of colours in groups returned.
+def get_color_subsets(color_id, l=1):
+    colour_ids = list()
+    
+    cis = set(WUBRG.get_color_string(color_id))
+    for c in COLOUR_GROUPS:
+        if len(c) >= l and cis > set(c) :
+            colour_ids.append(c)
+    
+    return colour_ids
 
 
 

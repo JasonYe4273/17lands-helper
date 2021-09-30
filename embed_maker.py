@@ -70,6 +70,8 @@ def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, 
 def gen_colour_rating_embed():
     embed = new_data_embed(title="Colour Rankings", url="https://www.17lands.com/color_ratings")
 
+    # TODO: Modufy this so it orders the results by win rate, rather than colour identity.
+    
     for d_key in COLOUR_GROUPINGS:
         d = COLOUR_GROUPINGS[d_key]
         msg = ""

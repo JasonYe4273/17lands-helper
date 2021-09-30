@@ -26,24 +26,7 @@ SET_CONFIG = {
             "Updating" : False,
             "StartDate" : "yyyy-mm-dd",
             "EndDate" : "yyyy-mm-dd"
-        },
-        "Sealed": {
-            "Updating" : False,
-            "StartDate" : "yyyy-mm-dd",
-            "EndDate" : "yyyy-mm-dd"
-        },
-        "TradSealed": {
-            "Updating" : False,
-            "StartDate" : "yyyy-mm-dd",
-            "EndDate" : "yyyy-mm-dd"
-        },
-        "DraftChallenge": {
-            "Updating" : False,
-            "StartDate" : "yyyy-mm-dd",
-            "EndDate" : "yyyy-mm-dd"
         }
-        # TODO: Consider adding in a list of key archetypes to reduce data footprint.
-        #"KeyArchetypes" : ["U", "B", "WU", "WB", "UB", "UG", ""]
     },
     "AFR" : {
         "PremierDraft": {
@@ -60,21 +43,6 @@ SET_CONFIG = {
             "Updating" : False,
             "StartDate" : "yyyy-mm-dd",
             "EndDate" : "yyyy-mm-dd"
-        },
-        "Sealed": {
-            "Updating" : False,
-            "StartDate" : "yyyy-mm-dd",
-            "EndDate" : "yyyy-mm-dd"
-        },
-        "TradSealed": {
-            "Updating" : False,
-            "StartDate" : "yyyy-mm-dd",
-            "EndDate" : "yyyy-mm-dd"
-        },
-        "DraftChallenge": {
-            "Updating" : False,
-            "StartDate" : "yyyy-mm-dd",
-            "EndDate" : "yyyy-mm-dd"
         }
     }
 }
@@ -82,7 +50,7 @@ SET_CONFIG = {
 ##SETS = ['MID', 'AFR']
 SETS = ['MID']
 FORMATS = ['PremierDraft', 'TradDraft']
-#FORMATS = ['PremierDraft', 'TradDraft', 'QuickDraft', 'Sealed', 'TradSealed', 'DraftChallenge
+#FORMATS = ['PremierDraft', 'TradDraft', 'QuickDraft', 'Sealed', 'TradSealed']
 
 def get_set_tree():
     SET_TREE = dict()
@@ -97,6 +65,7 @@ def get_set_tree():
 
 START_DATE = '2021-01-01'
 DATA_DIR = os.path.join(os.getcwd(), "17_lands_data")
+CONFIG_DIR = os.path.join(os.getcwd(), "config")
 FILENAME = '{0}_{1}.json'  #'{set}_{format}.json'
 
 
@@ -137,7 +106,6 @@ RARITY_ALIASES = {
 
 
 
-
 DATA_CACHE = get_set_tree()
 ##{
 ##"SET" : {
@@ -171,7 +139,6 @@ WINRATES = get_set_tree()
 ##    }
 ##}
 
-METAGAME_REPORT = get_set_tree()
 
 def fetch_bot_data():
     # TODO: Fill this out to pull .config data to update the bot on the fly.
@@ -218,6 +185,7 @@ def min_play_filter(df, p):
     min_game = df['# GP'].sum() * (p/100)
     return df[df['# GP'] >= min_game]
 
+
 # Filters out cards that don't fall within the colour identy.
 def color_id_filter(df, color_string):
     if color_string is not None and color_string != '':
@@ -225,12 +193,73 @@ def color_id_filter(df, color_string):
     else:
         return df
 
+
 # Filters out cards that aren't in the given rarities.
 def rarity_filter(df, rarity):
     if rarity is not None and rarity != '':
         return df[df['Rarity'].apply(lambda x: set(x) <= set(rarity))]
     else:
         return df
+
+
+# Gets the top n cards, based on a particular stat column.
+# Can filter based on card colours, rarity.
+# Can get the bottom n cards with 'reverse=True'
+def get_top(df, stat, n=5, card_colors=None, card_rarity=None, min_thresh=1, reverse=False, columns=None):
+    if df.empty:
+        return df
+
+    if columns == None:
+        columns = list(df)
+    
+    filtered = color_id_filter(df, card_colors)
+    filtered = rarity_filter(filtered, card_rarity)
+    filtered = min_play_filter(filtered, min_thresh)
+
+    # If reverse is true, we need to invert the ordering.
+    # If we're getting card pick info, we also need to invert the ordering.
+    smallest = reverse != (stat == "ALSA" or stat == "ATA")  # != is a functional XOR.
+    
+    # Return the smallest values if we're dealing with pick orders
+    if smallest:
+        filtered = filtered.nsmallest(n, stat)
+    else:
+        filtered = filtered.nlargest(n, stat)
+
+
+    if reverse:
+        filtered.columns.name = f"'Top {n} by {stat}'"
+    else:
+        filtered.columns.name = f"'Bottom {n} by {stat}'"
+
+    
+    # TODO: Give a clearer idea of the restrictions on the data in the DataFrame.
+    #c_filter = f"\r\nColours: '{card_colors}'" if card_colors is not None else ""
+    #r_filter = f"\r\nRarities: '{card_rarity}'" if card_colors is not None else ""
+    
+    #filtered.columns.name = title + c_filter + r_filter
+    filtered = filtered[columns]
+    return filtered
+
+
+# Gets a dataframe for the card, where the deck colours are the indexes.
+def get_card_frame(s, f, card_name):
+    columns = list(PANDAS_CACHE[s][f][''])
+    card_df = pd.DataFrame(columns=columns)
+    
+    for c in PANDAS_CACHE[s][f]:
+        df = PANDAS_CACHE[s][f][c]
+        if c == '':
+            c = 'Overall'
+        data_df = None
+        if df.empty or card_name not in df.index:
+            data_df = pd.DataFrame(np.nan, index=[c], columns=columns)
+        else:
+            series = df.loc[card_name]
+            data_df = series.to_frame(name=c).transpose()
+        card_df = card_df.append(data_df)
+    
+    return card_df
 
 
 
@@ -259,42 +288,6 @@ def get_color_win_rates():
                 win_rates[s][f][c] = color_game_counts(s,f,c)
     global WINRATES
     WINRATES = win_rates
-
-
-# Gets the top n cards, based on a particular stat column.
-# Can filter based on card colours, rarity.
-# Can get the bottom n cards with 'reverse=True'
-def get_top(df, stat, n=5, card_colors=None, card_rarity=None, min_thresh=1, reverse=False, columns=None):
-    if df.empty:
-        return df
-
-    if columns == None:
-        columns = list(df)
-    
-    filtered = color_id_filter(df, card_colors)
-    filtered = rarity_filter(filtered, card_rarity)
-    filtered = min_play_filter(filtered, min_thresh)
-
-    # Functional XOR.
-    reverse = reverse != (stat == "ALSA" or stat == "ATA")
-    
-    title = ""
-    # Return the smallest values if we're dealing with pick orders
-    if reverse:
-        filtered = filtered.nsmallest(n, stat)
-        #title = f"Bottom {n} cards by '{stat}'"
-    else:
-        filtered = filtered.nlargest(n, stat)
-        #title = f"Top {n} cards by '{stat}'"
-    
-    # TODO: Give a clearer idea of the restrictions on the data in the DataFrame.
-    #c_filter = f"\r\nColours: '{card_colors}'" if card_colors is not None else ""
-    #r_filter = f"\r\nRarities: '{card_rarity}'" if card_colors is not None else ""
-    
-    #filtered.columns.name = title + c_filter + r_filter
-    filtered.columns.name = f"'Top {n} by {stat}'"
-    filtered = filtered[columns]
-    return filtered
 
 
 def gen_metadata_dict():
@@ -376,13 +369,17 @@ def get_color_overview(s, f, main_color, stat='GIH WR', columns=None):
 
 # Gets an overview of the metagame data and saves it to METAGAME_REPORT
 def get_format_metagame_data(s, f, stat='GIH WR', columns=None):
-    report = get_set_tree()
+    if columns is None:
+        columns = COLUMNS_TRUNC
+    
+    report = dict()
     for s in SETS:
+        report[s] = dict()
         for f in FORMATS:
-            for c in COLOUR_GROUPS:
+            report[s][f] = dict()
+            for c in COLORS:
                 report[s][f][c] = get_color_overview(s, f, c, stat=stat, columns=columns)
-    global METAGAME_REPORT
-    METAGAME_REPORT = report
+    return report
 
 
 
@@ -480,7 +477,7 @@ def fetch_format_data(s, f, c = 'None', start_date = None, end_date = None):
     success = False
     count = 0
 
-    if c is None or c == 'None' or c == "":
+    if c is None or c == 'None' or c == '':
         c = 'No Filter'
 
     if start_date is None:
