@@ -57,6 +57,8 @@ async def data_query(query, channel):
     scryfall_cards = []
     rest = card_query
     old_rest = None
+    sets = []
+
     while rest != '':
         if rest == old_rest:
             await send_message(channel, 'Error: infinite loop while parsing cardnames')
@@ -80,17 +82,21 @@ async def data_query(query, channel):
         # Try get unique card from Scryfall
         card_response = data_core.query_scryfall(raw_cardname)
         if card_response['err_msg'] != None:
-            send_message(channel, card_response['err_msg'])
+           await send_message(channel, card_response['err_msg'])
         else:
-            scryfall_cards.append(card_response['card_info'])
-        
+            
+            s = card_response['card_info']['set']
+            if s in SETS:
+                scryfall_cards.append(card_response['card_info'])
+                sets.append(s)
+            else:
+               await send_message(channel, f"No data for '{s}'. Cannot display info for '{card_response['card_info']['name']}'.")
         
 
     options = options_query.split(' ')
 
     # Parse options to the right of separator
     formats = []
-    sets = []
     data_commands = {}
     verbose = False
     start_date = None
@@ -156,17 +162,6 @@ async def data_query(query, channel):
     if len(data_commands) == 0:
         for dc in DATA_COMMANDS['data']:
             data_commands[dc[0]] = dc
-    
-##    # Filter out irrelevant sets
-##    filtered_sets = []
-##    for s in sets:
-##        for c in scryfall_cards:
-##            print(get_card_name(c))
-##            print(cache[s][formats[0]])
-##            if get_card_name(c) in DATA_CACHE[s][formats[0]]:
-##                filtered_sets.append(s)
-##                break
-##    sets = filtered_sets
     
     # Calculate start and end date
     result_description = ''

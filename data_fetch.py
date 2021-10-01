@@ -207,6 +207,10 @@ def get_scryfall_data(raw_cardname):
             card_info['cmc'] = card['cmc']
             card_info['color_identity'] = WUBRG.get_color_identity(''.join(card['color_identity']))
             card_info['id'] = card['id']
+            if card['set_type'] == 'promo':
+                card_info['set'] = card['set'][1:].upper()
+            else:
+                card_info['set'] = card['set'].upper()
 
             if 'card_faces' in card:
                 card_info['mana_cost'] = WUBRG.parse_cost(card['card_faces'][0]['mana_cost'])
@@ -316,15 +320,12 @@ def update_card_data(s, f, force = False):
         
         # Or, if the format is live,
         if SET_CONFIG[s][f]['Updating']:
-            time_range_start = time(0, 55)
-            time_range_end = time(2, 0)
-            cur_date = datetime.utcnow()
-            cur_time = cur_date.time()
+            utc_time = datetime.utcnow().time()
             edit_date = datetime.fromtimestamp(os.path.getmtime(filepath))
-            edit_diff = cur_date - edit_date
+            edit_diff = datetime.now() - edit_date
 
             # And the current time is between 12:55am and 2:00am,
-            if time_range_start <= cur_time <= time_range_end:
+            if time(0, 55) <= utc_time <= time(2, 0):
                 # If the file is already updated, don't update it.
                 if edit_diff < timedelta(hours=1):
                     print(f"{s} {f} is live, but data is already updated.")

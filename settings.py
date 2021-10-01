@@ -114,6 +114,7 @@ def gen_card_info():
         'mana_cost': None,
         'cmc': None,
         'color_identity': None,
+        'set' : None,
         'id': None
     }
 
