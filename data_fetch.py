@@ -8,7 +8,8 @@ import pandas as pd
 
 import WUBRG
 from WUBRG import COLOUR_GROUPS, COLORS
-from settings import SETS, FORMATS
+from settings import SETS, FORMATS, gen_card_info
+from utils import format_data, get_card_name
 
 
 RARITY_ALIASES = {
@@ -185,6 +186,40 @@ def fetch_deck_data():
 
 
 ### Card Level Data ###
+
+def get_scryfall_data(raw_cardname):
+    card_info = gen_card_info()
+    ret = {'card_info': card_info, 'err_msg': None}
+    
+    try:
+        response = requests.get(f'https://api.scryfall.com/cards/named?fuzzy={raw_cardname}&set_type=expansion').json()
+        if response['object'] == 'error':
+            if response['details'][:20] == 'Too many cards match':
+                ret['err_msg'] = f'Error: multiple card matches for "{raw_cardname}"'
+            else:
+                ret['err_msg'] = f'Error: cannot find card "{raw_cardname}"'
+        elif response['object'] != 'card':
+            ret['err_msg'] = f'Error: "{raw_cardname}" returned non-card'
+        else:
+            card = response
+            card_info['name'] = card['name']
+            card_info['stored_name'] = get_card_name(card)
+            card_info['cmc'] = card['cmc']
+            card_info['color_identity'] = WUBRG.get_color_identity(''.join(card['color_identity']))
+            card_info['id'] = card['id']
+
+            if 'card_faces' in card:
+                card_info['mana_cost'] = WUBRG.parse_cost(card['card_faces'][0]['mana_cost'])
+                #card_info['colors'] = card['card_faces'][0]['colors'] + card['card_faces'][1]['colors']
+            else:
+                card_info['mana_cost'] = WUBRG.parse_cost(card['mana_cost'])
+                #card_info['colors'] = WUBRG.get_color_identity(''.join(card['colors']))
+
+    except:
+        ret['err_msg'] = f'Error querying Scryfall for {raw_cardname}'
+
+    return ret
+
 
 def fetch_card_data_by_colour(s, f, c = ''):
     # Manage params

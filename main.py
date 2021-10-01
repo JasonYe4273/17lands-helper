@@ -16,7 +16,6 @@ client = discord.Client()
 
 
 DATA_CACHE = None
-cache = {s: {f: {} for f in FORMATS} for s in SETS}
 
 
 async def send_embed_message(channel, embed):
@@ -36,7 +35,7 @@ def update_data():
 @tasks.loop(hours=12)
 async def refresh_data():
     update_data()
-    print(f"Data cache char len: 'len(str(DATA_CACHE))'")
+    print(f"Data cache char len: '{len(str(DATA_CACHE))}'")
 
 
 @client.event
@@ -46,25 +45,6 @@ async def on_ready():
     #update_data()
     print('Logged in as {0.user}'.format(client))
 
-
-def parse_colors(colors_str):
-    if colors_str == 'all':
-        return 'None'
-    if colors_str.capitalize() in COLOR_ALIASES:
-        return COLOR_ALIASES[colors_str.capitalize()]
-    colors_exist = {'W': False, 'U': False, 'B': False, 'R': False, 'G': False}
-    for c in colors_str.upper():
-        if c not in colors_exist:
-            return None
-        if colors_exist[c]:
-            return None
-        colors_exist[c] = True
-
-    colors = ''
-    for c in colors_exist:
-        if colors_exist[c]:
-            colors += c
-    return colors
 
 
 async def data_query(query, channel):
@@ -98,17 +78,13 @@ async def data_query(query, channel):
                 rest = rest[end:].strip()
 
         # Try get unique card from Scryfall
-        try:
-            response = requests.get(f'https://api.scryfall.com/cards/named?fuzzy={raw_cardname}').json()
-            if response['object'] == 'error':
-                if response['details'][:20] == 'Too many cards match':
-                    await send_message(channel, f'Error: multiple card matches for "{raw_cardname}"')
-                else:
-                    await send_message(channel, f'Error: cannot find card "{raw_cardname}"')
-            else:
-                scryfall_cards.append(response)
-        except:
-            await send_message(channel, f'Error querying Scryfall for {raw_cardname}')
+        card_response = data_core.query_scryfall(raw_cardname)
+        if card_response['err_msg'] != None:
+            send_message(channel, card_response['err_msg'])
+        else:
+            scryfall_cards.append(card_response['card_info'])
+        
+        
 
     options = options_query.split(' ')
 
@@ -167,9 +143,10 @@ async def data_query(query, channel):
         # Deck colors to search
         elif ol.startswith('-c=') or ol.startswith('colors='):
             if colors is None:
-                colors = parse_colors(ol[ol.find('=')+1:])
-                if colors is not None and colors != 'all':
+                colors = WUBRG.get_color_identity(ol[ol.find('=')+1:])
+                if colors is not None and colors != 'all' or colors != '':
                     can_use_cache = False
+
 
     # Set defaults if no options specified
     if len(formats) == 0:
@@ -179,16 +156,18 @@ async def data_query(query, channel):
     if len(data_commands) == 0:
         for dc in DATA_COMMANDS['data']:
             data_commands[dc[0]] = dc
-
-    # Filter out irrelevant sets
-    filtered_sets = []
-    for s in sets:
-        for c in scryfall_cards:
-            if get_card_name(c) in cache[s][formats[0]]:
-                filtered_sets.append(s)
-                break
-    sets = filtered_sets
-
+    
+##    # Filter out irrelevant sets
+##    filtered_sets = []
+##    for s in sets:
+##        for c in scryfall_cards:
+##            print(get_card_name(c))
+##            print(cache[s][formats[0]])
+##            if get_card_name(c) in DATA_CACHE[s][formats[0]]:
+##                filtered_sets.append(s)
+##                break
+##    sets = filtered_sets
+    
     # Calculate start and end date
     result_description = ''
     if end_date is None:
@@ -212,6 +191,8 @@ async def data_query(query, channel):
         result_description = f' in {colors} decks{result_description}'
         query_str += f'&colors={colors}'
 
+
+    print('pre: sent = []')
     sent = []
     for s in sets:
         data_to_use = {}
@@ -219,9 +200,11 @@ async def data_query(query, channel):
             # Use data from the cache if possible
             if can_use_cache:
                 #data_to_use[f] = DATA_CACHE[s][f][colors]
-                data_to_use[f] = cache[s][f]
-            elif f'{f}{query_str}' in cache[s]:
-                data_to_use[f] = cache[s][f'{f}{query_str}']
+                data_to_use[f] = DATA_CACHE[s][f]['']
+                print('Using main cache')
+            elif f'{f}{query_str}' in DATA_CACHE[s]:
+                data_to_use[f] = DATA_CACHE[s][f'{f}{query_str}']
+                print('Using query cache')
             else:
                 #data_to_use[f] = fetch_format_data(s, f, colors, start_date, end_date)
                 try:
@@ -235,15 +218,21 @@ async def data_query(query, channel):
                     )
                     for c in response.json():
                         data_to_use[f][c['name']] = c
-                        cache[s][f'{f}{query_str}'][c['name']] = c
+                        DATA_CACHE[s][f'{f}{query_str}'][c['name']] = c
                     print('Success!')
                 except:
                     await send_message(channel, f'Failed to fetch data for {s} {f} from 17lands')
+
         for card in scryfall_cards:
             cardname = get_card_name(card)
-            if cardname in data_to_use[formats[0]] and cardname not in sent:
+            print(cardname)
+            if cardname not in data_to_use[formats[0]]:
+                print(f'{cardname} not found in data_to_use')
+            elif cardname in sent:
+                print(f'{cardname} already sent')
+            else:
                 sent.append(cardname)
-
+                print(f'Generating embed for {cardname}')
                 await send_embed_message(channel, gen_card_embed(
                     card=card,
                     set_code=s,

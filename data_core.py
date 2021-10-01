@@ -32,6 +32,10 @@ def init_cache():
     #WINRATES = data_fetch.WINRATES
 
 
+def query_scryfall(card_name):
+    return data_fetch.get_scryfall_data(card_name)
+    
+
 def query_cache(_set, _format, color_filter, cardname):
     if _set not in DATA_CACHE:
         return None

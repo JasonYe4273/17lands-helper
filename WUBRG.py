@@ -128,7 +128,7 @@ def get_color_string(s):
 
 
 def get_color_identity(color_string):
-    char_set = set(color_string)
+    char_set = set(get_color_string(color_string))
     s = ''
     for c in COLOR_ALIASES['All']:
         if c in char_set:
@@ -232,8 +232,8 @@ def get_emoji(emoji_str):
 # Eg. {10}{G}{G} would return ['10', 'G', 'G']
 # Eg. 10GG would return ['1', '0', 'G', 'G'], which is likely not what's wanted.
 def parse_cost(mana_cost):
-    # TODO: Parse the mana cost from the {1}{W}{B} format into a list of strings.
-    return [char for char in mana_cost]
+    # TODO: Properly parse the mana cost from the {1}{W}{B} format into a list of strings.
+    return [char for char in mana_cost if char not in set('{}')]
     pass
 
 # Takes a mana cost and attempts to return a string of emojis which

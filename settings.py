@@ -106,3 +106,38 @@ STAT_NAMES = {
 PERCENTS = ["GP WR", "OH WR", "GD WR", "GIH WR", "GND WR", "IWD"]
 COLUMNS_TRUNC = ["Color", "Rarity", "ALSA", "# GP", "GP WR", "# GIH", "GIH WR"]
 
+
+def gen_card_info():
+    return {
+        'name': None,
+        'stored_name' : None,
+        'mana_cost': None,
+        'cmc': None,
+        'color_identity': None,
+        'id': None
+    }
+
+##CARD_INFO = {
+##    'id': None,
+##    'oracle_id': None,
+##    'uri': None,
+##    'scryfall_uri': None,
+##    'set': None,
+##    'set_name': None,
+##    'color_identity': None,
+##    'extra': None,
+##    
+##    'cmc': None,
+##    'oracle_text': None,
+##
+##    'name': None,
+##    'mana_cost': None,
+##    'colors': None,
+##    'type_line': None,
+##    'power': None,
+##    'toughness': None,
+##    
+##    'front': dict(),
+##    'back': dict()
+##}
+
