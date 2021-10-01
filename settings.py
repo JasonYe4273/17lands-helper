@@ -1,3 +1,5 @@
+import os
+
 ### Parsing Consts ###
 COMMAND_STR = '17!'
 DATA_QUERY_L = '{{'
@@ -7,6 +9,9 @@ DEFAULT_FORMAT = 'PremierDraft'
 START_DATE = '2019-01-01'
 QUOTE_PAIRS = {'"': '"', '“': '”'}
 
+
+SETS = ['MID']
+#FORMATS = ['PremierDraft', 'TradDraft', 'QuickDraft']
 
 
 ### File Consts ###

@@ -1,0 +1,373 @@
+import os
+import json
+import requests
+from time import sleep
+from datetime import date, time, datetime, timedelta
+import numpy as np
+import pandas as pd
+
+import WUBRG
+from WUBRG import COLOUR_GROUPS, COLORS
+from settings import SETS, FORMATS
+
+
+RARITY_ALIASES = {
+    'common': "C",
+    'uncommon': "U",
+    'rare': "R",
+    'mythic': "M"
+}
+
+
+STAT_NAMES = {
+    ## "name",
+     "color" : "Color",
+     "rarity" : "Rarity",
+     "seen_count" : "# Seen", 
+     "avg_seen" : "ALSA", 
+     "pick_count" : "# Picked", 
+     "avg_pick" : "ATA", 
+     "game_count" : "# GP", 
+     "win_rate" : "GP WR", 
+    ## "sideboard_game_count" : "Sideboard Games", 
+    ## "sideboard_win_rate" : "SWR", 
+     "opening_hand_game_count" : "# OH", 
+     "opening_hand_win_rate" : "OH WR", 
+     "drawn_game_count" : "# GD", 
+     "drawn_win_rate" : "GD WR", 
+     "ever_drawn_game_count" : "# GIH", 
+     "ever_drawn_win_rate" : "GIH WR", 
+     "never_drawn_game_count" : "# GND", 
+     "never_drawn_win_rate" : "GND WR", 
+     "drawn_improvement_win_rate" : "IWD"
+    ## "url",
+    ## "url_back",
+}
+
+
+### Config ###
+SET_CONFIG = None
+DEFAULT_START_DATE = None
+DATA_DIR = None
+CONFIG_DIR = None
+CARD_FILENAME = None
+
+
+def get_config():
+    global SET_CONFIG
+    SET_CONFIG = {
+        "MID" : {
+            "PremierDraft": {
+                    "Updating" : True,
+                    "StartDate" : None,
+                    "EndDate" : None
+            },
+            "TradDraft": {
+                    "Updating" : True,
+                    "StartDate" : None,
+                    "EndDate" : None
+            },
+            "QuickDraft": {
+                    "Updating" : True,
+                    "StartDate" : None,
+                    "EndDate" : None
+            }
+        }
+    }
+
+    global DEFAULT_START_DATE
+    DEFAULT_START_DATE = '2021-01-01'
+
+    global DATA_DIR
+    DATA_DIR = os.path.join(os.getcwd(), "17_lands_data")
+
+    global CONFIG_DIR
+    CONFIG_DIR = os.path.join(os.getcwd(), "config")
+
+    global CARD_FILENAME
+    CARD_FILENAME = 'CARD_DATA_{0}_{1}.json'  #'{set}_{format}.json'
+    
+
+def log_config():
+    print(f"'SET_CONFIG': {SET_CONFIG}")
+    print(f"'DEFAULT_START_DATE': {DEFAULT_START_DATE}")
+    print(f"'DATA_DIR': {DATA_DIR}")
+    print(f"'CONFIG_DIR': {CONFIG_DIR}")
+    print(f"'CARD_FILENAME': {CARD_FILENAME}")
+    
+
+get_config()
+log_config()
+
+
+
+### 'Objects' ###
+
+def get_set_tree():
+    SET_TREE = dict()
+    for s in SETS:
+        SET_TREE[s] = dict()
+        for f in FORMATS:
+            SET_TREE[s][f] = dict()
+            for c in COLOUR_GROUPS:
+                SET_TREE[s][f][c] = None
+    return SET_TREE
+
+
+PANDAS_CACHE = get_set_tree()
+DATA_CACHE = get_set_tree()
+WINRATES = get_set_tree()
+##"CARD" : {
+##    "STAT_1" : None,
+##    "STAT_2" : None,
+##    "STAT_3" : None ...
+##    }
+
+
+
+### Helper Functions ###
+
+# Make an HTTP request to a given url for json data.
+# 'tries' limits the number of attempts made to get data.
+# 'delay' sets the number of seconds before retrying on a fail.
+# On sucess returns a json object, otherwise None
+def fetch(url, tries = 5, delay = 60):
+    success = False
+    count = 0
+    
+    while not success:
+        count += 1
+        response = None
+        
+        try:
+            response = requests.get(url)
+            data = response.json()
+            
+            success = True
+            print('Success!')
+            return data
+        except:
+            if count < tries:
+                print(f'Failed. Trying again in {delay} seconds.')
+                sleep(delay)
+                continue
+            else:
+                print(f'Failed to get data after 5 attempts.')
+                return None
+
+
+# Converts a dict of cards stats into a a DataFrame
+def panadafy_dict(d):
+    if d is None:
+        print('Warning: Dict for pandafying is null.')
+    
+    frame = pd.DataFrame.from_dict(d, orient='index')
+    frame = frame.rename(columns=STAT_NAMES)
+    
+    # If there's no data, make a blank frame and return it.
+    if len(d) == 0:
+        return frame
+    
+    for col in ["GP WR", "OH WR", "GD WR", "GIH WR", "GND WR", "IWD"]:
+        frame[col] = frame[col] * 100
+    
+    frame['Rarity'] = frame['Rarity'].map(RARITY_ALIASES)
+    frame = frame.round(3)
+    return frame
+
+
+### Deck Level Data ###
+            
+def fetch_deck_data():
+    
+    pass
+
+
+
+### Card Level Data ###
+
+def fetch_card_data_by_colour(s, f, c = ''):
+    # Manage params
+    start_date = SET_CONFIG[s][f]['StartDate']
+    if start_date is None:
+        start_date = DEFAULT_START_DATE
+        
+    end_date = SET_CONFIG[s][f]['EndDate']
+    if end_date is None:
+        end_date = date.today()
+    
+    if c is None or c == '':
+        c = 'No Filter'
+
+    # Generate url
+    url_base = 'https://www.17lands.com/card_ratings/data?'
+    url_append = f'expansion={s}&format={f}&start_date={start_date}&end_date={end_date}'
+    colour_filter = '' if c == 'No Filter' else f'&colors={c}'
+    url = url_base + url_append + colour_filter
+    print(f"Fetching data for {s} {f}, filter: '{c}'...")
+
+    # Fetch card-lavel data.
+    response = fetch(url)
+
+    # Pump the query results into a dict, tagged with the colour filter,
+    # trimming data like image, name etc.
+    json_colour = dict()
+    for card in response:
+        card_info = dict()
+        for stat in STAT_NAMES:
+            card_info[stat] = card[stat]
+        json_colour[card['name']] = card_info
+    return json_colour
+    
+    pass
+
+
+def fetch_card_data(s, f, delay = 5):
+    # Automatically gets the overall data for cards, and the data for 1, 2 and 3 colour decks.
+    card_data = dict()
+
+    # Query 17 lands for each colour filter.
+    for c in COLOUR_GROUPS:       
+        card_data[c] = fetch_card_data_by_colour(s, f, c)
+        sleep(delay)
+
+    print(f"Fetched card data for {s} {f}!")
+    return card_data
+
+
+def save_card_data(s, f):
+    # Convert the aggreate dictionary into a .json file, and save it.
+    filename = CARD_FILENAME.format(s, f)
+    try:
+        card_data = fetch_card_data(s, f)
+        filepath = os.path.join(DATA_DIR, filename)
+        file = open(filepath, 'w')
+        file.write(json.dumps(card_data))
+        file.close()
+        
+        print(f'File {filename} created.')
+        return True
+    except Exception as ex:
+        print(f'Error creating {filename}!')
+        return False
+
+
+def load_card_data(s, f):
+    filename = CARD_FILENAME.format(s, f)
+    filepath = os.path.join(DATA_DIR, filename)
+    print(f'Parsing {filename}...')
+
+    try:
+        json_str = ''
+        with open(filepath, 'r') as f:
+            json_str = f.read()
+            f.close()
+        
+        return json.loads(json_str)
+    except:
+        print(f'Error reading json file {filename}')
+        return None    
+
+
+def update_card_data(s, f, force = False):
+    def allow_update(s, f):
+        filepath = os.path.join(DATA_DIR, CARD_FILENAME.format(s, f))
+        
+        # If the data doesn't exist,
+        if not os.path.isfile(filepath):
+            # Signal for an update.
+            print(f"{s} {f} doesn't exist. Signaling update...")
+            return True
+        
+        # Or, if the format is live,
+        if SET_CONFIG[s][f]['Updating']:
+            time_range_start = time(0, 55)
+            time_range_end = time(2, 0)
+            cur_date = datetime.utcnow()
+            cur_time = cur_date.time()
+            edit_date = datetime.fromtimestamp(os.path.getmtime(filepath))
+            edit_diff = cur_date - edit_date
+
+            # And the current time is between 12:55am and 2:00am,
+            if time_range_start <= cur_time <= time_range_end:
+                # If the file is already updated, don't update it.
+                if edit_diff < timedelta(hours=1):
+                    print(f"{s} {f} is live, but data is already updated.")
+                    return False
+                # Otherwise, update the data.
+                else:
+                    print(f"{s} {f} is live, and new data should exist. Signaling update...")
+                    return True
+
+
+            # Or, if the file is over 24hrs old, update it.
+            if edit_diff >= timedelta(days=1):
+                # Signal for an update.
+                print(f"{s} {f} is over 24hrs old. Signaling update...")
+                return True
+
+        # Otherwise, skip the update.
+        return False
+
+    if force or allow_update(s, f):
+        save_card_data(s, f)
+
+
+
+### Metagame Level Data ###
+
+def fetch_meta_data():
+    
+    pass
+
+
+
+### Master Functions ###
+
+def update_format_data(s, f, force=False):
+    #fetch_deck_data()
+    update_card_data(s, f, force)
+    #fetch_meta_data()
+
+
+def update_all_data(force=False):
+    for s in SETS:
+        for f in FORMATS:
+            update_format_data(s, f, force)
+
+
+def load_format_data(s, f):
+    # Load deck-level data.
+
+    # Load card-level data.
+    card_dict = load_card_data(s, f)
+    if card_dict is not None:
+        DATA_CACHE[s][f] = card_dict
+        for c in COLOUR_GROUPS:
+            PANDAS_CACHE[s][f][c] = panadafy_dict(card_dict[c])
+
+    # Load meta-level data.
+
+
+def load_all_data():
+    for s in SETS:
+        for f in FORMATS:
+            load_format_data(s, f)
+
+
+
+### File Init ###
+def init():
+    update_all_data()
+    load_all_data()
+
+
+init()
+     
+##s = SETS[0]
+##f = FORMATS[0]
+##            
+##x = fetch_card_data_by_colour(s, f)
+##update_all_data()
+##
+##x = load_card_data(s, f)

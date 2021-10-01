@@ -5,47 +5,18 @@ import time
 from datetime import date, datetime, timedelta
 from discord.ext import tasks
 from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE, DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID, QUOTE_PAIRS
+from settings import SETS, FORMATS, FORMAT_MAPPING, DATA_COMMANDS
 import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
 from embed_maker import gen_card_embed, supported_color_strings
 from utils import format_data, get_card_name
-from set_info import DATA_CACHE, init_cache, fetch_format_data
+import data_core
 
 client = discord.Client()
 
-UPDATING_SETS = ['MID']
-OLD_SETS = ['AFR', 'STX', 'KHM']
-SETS = UPDATING_SETS + OLD_SETS
 
-FORMATS = {
-    'PremierDraft': ['bo1', 'premier', 'premierdraft'],
-    'TradDraft': ['bo3', 'trad', 'traditional', 'traddraft', 'traditionaldraft'],
-    'QuickDraft': ['qd', 'quick', 'quickdraft'],
-    'Sealed': ['sealed', 'bo1sealed', 'sealedbo1'],
-    'TradSealed': ['tradsealed', 'bo3sealed', 'sealedbo3'],
-    'DraftChallenge': ['challenge', 'draftchallenge'],
-}
-FORMAT_MAPPING = {}
-for f in FORMATS:
-    for s in FORMATS[f]:
-        FORMAT_MAPPING[s] = f
-
+DATA_CACHE = None
 cache = {s: {f: {} for f in FORMATS} for s in SETS}
-
-DATA_COMMANDS = {
-    'alsa': [('seen_count', '# Seen', True), ('avg_seen', 'ALSA', False)],
-    'ata': [('pick_count', '# Taken', True), ('avg_pick', 'ATA', False)],
-    'gp': [('game_count', '# GP', True), ('win_rate', 'GP WR', False)],
-    'oh': [('opening_hand_game_count', '# OH', True), ('opening_hand_win_rate', 'OH WR', False)],
-    'gd': [('drawn_game_count', '# GD', True), ('drawn_win_rate', 'GD WR', False)],
-    'gih': [('ever_drawn_game_count', '# GIH', True), ('ever_drawn_win_rate', 'GIH WR', False)],
-    'gnd': [('never_drawn_game_count', '# GND', True), ('never_drawn_win_rate', 'GND WR', False)],
-    'iwd': [('drawn_improvement_win_rate', 'IWD', False)]
-}
-DATA_COMMANDS['drafts'] = DATA_COMMANDS['alsa'] + DATA_COMMANDS['ata']
-DATA_COMMANDS['games'] = DATA_COMMANDS['gp'] + DATA_COMMANDS['oh'] + DATA_COMMANDS['gd'] + DATA_COMMANDS['gih'] + DATA_COMMANDS['gnd'] + DATA_COMMANDS['iwd']
-DATA_COMMANDS['data'] = DATA_COMMANDS['drafts'] + DATA_COMMANDS['games']
-
 
 
 async def send_embed_message(channel, embed):
@@ -56,12 +27,25 @@ async def send_message(channel, message):
     print(f'Sending message to channel {channel}: {message}')
     await channel.send(message)
 
+def update_data():
+    data_core.init_cache()
+    global DATA_CACHE
+    DATA_CACHE = data_core.DATA_CACHE
+
+
+@tasks.loop(hours=12)
+async def refresh_data():
+    update_data()
+    print(f"Data cache char len: 'len(str(DATA_CACHE))'")
+
+
 @client.event
 async def on_ready():
+    refresh_data.start()
     WUBRG.cache_manamojis(client)
-    #init_cache()
-    fetch_data(OLD_SETS)
+    #update_data()
     print('Logged in as {0.user}'.format(client))
+
 
 def parse_colors(colors_str):
     if colors_str == 'all':
@@ -81,6 +65,7 @@ def parse_colors(colors_str):
         if colors_exist[c]:
             colors += c
     return colors
+
 
 async def data_query(query, channel):
     print(f'Handling data query {query}')
@@ -306,34 +291,7 @@ async def on_message(message):
         await send_message(message.channel, '<https://github.com/JasonYe4273/17lands-helper>')
 
 
-@tasks.loop(hours=12)
-async def refresh_data():
-    #init_cache()
-    #print(DATA_CACHE)
-    fetch_data(UPDATING_SETS)
 
-def fetch_data(sets):
-    for s in sets:
-        cache[s] = {f: {} for f in FORMATS}
-        for f in FORMATS:
-            success = False
-            while not success:
-                try:
-                    print(f'Fetching data for {s} {f}...')
-                    response = requests.get(
-                        'https://www.17lands.com/card_ratings/data?' +
-                        f'expansion={s}&format={f}&start_date={START_DATE}&end_date={date.today()}'
-                    )
-                    for c in response.json():
-                        cache[s][f][c['name']] = c
-                    success = True
-                    print('Success!')
-                except:
-                    print('Failed; trying again in 30s')
-                    time.sleep(30)
-
-
-refresh_data.start()
 try:
     client.run(os.environ['TOKEN'])
 except:
