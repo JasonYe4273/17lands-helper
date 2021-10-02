@@ -15,6 +15,35 @@ FORMAT_NICKNAMES = {
     'DraftChallenge': 'Chal.',
 }
 
+
+
+### Help Embeds ###
+
+# Returns an emebed object, stylized for help calls
+def new_help_embed(title, description = ""):
+    embed = discord.Embed(title=title, description=description, color=discord.Color.red())
+    return embed
+
+# Returns an embed which lists all of the strings which can be parsed into color strings.
+def supported_color_strings():
+    ret = new_help_embed(
+        title="Available Colour Strings",
+        description="Accepted colours are a mix of 'W', 'U', 'B', 'R', 'G', and 'C', or the keywords below.",
+        )
+    
+    for d_key in COLOR_ALIASES_SUPPORT:
+        d = COLOR_ALIASES_SUPPORT[d_key]
+        msg = ""
+        for s in d:
+            color_string = WUBRG.get_color_string(s)
+            color_id = WUBRG.emojify_color_id(color_string)
+            
+            msg +=color_id + ' - ' + s + '\r\n'
+        ret.add_field(name=d_key, value=msg, inline=True)
+    return ret
+
+
+
 ### Data Embeds ###
 
 # Returns an emebed object, stylized for data queries.
@@ -28,12 +57,9 @@ def new_data_embed(title, description = "", url = ""):
 
 # Returns an embed which displays the game stats about a particular card.
 def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, color_filter = None):
-    if 'mana_cost' in card:
-        mana_cost = card['mana_cost']
-    elif 'card_faces' in card:
-        mana_cost = card['card_faces'][0]['mana_cost']
+    mana_cost = card['mana_cost']
     name = card['name']
-    stored_name = get_card_name(card)
+    stored_name = card['stored_name']
 
     
     title = name + " " + WUBRG.emojify_mana_cost(mana_cost)
@@ -86,28 +112,3 @@ def gen_colour_rating_embed():
     return embed
     
 
-
-### Help Embeds ###
-
-# Returns an emebed object, stylized for help calls
-def new_help_embed(title, description = ""):
-    embed = discord.Embed(title=title, description=description, color=discord.Color.red())
-    return embed
-
-# Returns an embed which lists all of the strings which can be parsed into color strings.
-def supported_color_strings():
-    ret = new_help_embed(
-        title="Available Colour Strings",
-        description="Accepted colours are a mix of 'W', 'U', 'B', 'R', 'G', and 'C', or the keywords below.",
-        )
-    
-    for d_key in COLOR_ALIASES_SUPPORT:
-        d = COLOR_ALIASES_SUPPORT[d_key]
-        msg = ""
-        for s in d:
-            color_string = WUBRG.get_color_string(s)
-            color_id = WUBRG.emojify_color_id(color_string)
-            
-            msg +=color_id + ' - ' + s + '\r\n'
-        ret.add_field(name=d_key, value=msg, inline=True)
-    return ret

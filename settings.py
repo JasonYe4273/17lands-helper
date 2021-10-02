@@ -1,4 +1,5 @@
 import os
+import json
 
 ### Parsing Consts ###
 COMMAND_STR = '17!'
@@ -10,16 +11,16 @@ START_DATE = '2019-01-01'
 QUOTE_PAIRS = {'"': '"', '“': '”'}
 
 
-SETS = ['MID']
-#FORMATS = ['PremierDraft', 'TradDraft', 'QuickDraft']
-
 
 ### File Consts ###
 DATA_DIR = os.path.join(os.getcwd(), "17_lands_data")
+print(f"'DATA_DIR': {DATA_DIR}")
+
 CONFIG_DIR = os.path.join(os.getcwd(), "config")
-CARD_DATA_FILENAME  = '{0}_{1}.json'
+print(f"'CONFIG_DIR': {CONFIG_DIR}")
 
-
+CARD_DATA_FILENAME  = 'CARD_DATA_{0}_{1}.json'
+print(f"'CARD_DATA_FILENAME': {CARD_DATA_FILENAME}")
 
 ### Set Consts ###
 FORMAT_NICKNAMES = {
@@ -30,18 +31,6 @@ FORMAT_NICKNAMES = {
     'TradSealed': 'Bo3Seal',
     'DraftChallenge': 'Chal.',
 }
-
-FORMATS = {
-    'PremierDraft': ['bo1', 'premier', 'premierdraft'],
-    'TradDraft': ['bo3', 'trad', 'traditional', 'traddraft', 'traditionaldraft'],
-    'QuickDraft': ['qd', 'quick', 'quickdraft'],
-    'Sealed': ['sealed', 'bo1sealed', 'sealedbo1'],
-    'TradSealed': ['tradsealed', 'bo3sealed', 'sealedbo3'],
-    'DraftChallenge': ['challenge', 'draftchallenge'],
-}
-
-
-
 
 
 
@@ -71,10 +60,7 @@ DATA_COMMANDS['drafts'] = DATA_COMMANDS['alsa'] + DATA_COMMANDS['ata']
 DATA_COMMANDS['games'] = DATA_COMMANDS['gp'] + DATA_COMMANDS['oh'] + DATA_COMMANDS['gd'] + DATA_COMMANDS['gih'] + DATA_COMMANDS['gnd'] + DATA_COMMANDS['iwd']
 DATA_COMMANDS['data'] = DATA_COMMANDS['drafts'] + DATA_COMMANDS['games']
 
-FORMAT_MAPPING = {}
-for f in FORMATS:
-    for s in FORMATS[f]:
-        FORMAT_MAPPING[s] = f
+
 
 
 STAT_NAMES = {
@@ -104,10 +90,8 @@ STAT_NAMES = {
 
 
 PERCENTS = ["GP WR", "OH WR", "GD WR", "GIH WR", "GND WR", "IWD"]
-COLUMNS_TRUNC = ["Color", "Rarity", "ALSA", "# GP", "GP WR", "# GIH", "GIH WR"]
 
-
-def gen_card_info():
+def gen_card_info_struct():
     return {
         'name': None,
         'stored_name' : None,
@@ -142,3 +126,53 @@ def gen_card_info():
 ##    'back': dict()
 ##}
 
+
+
+def load_set_config():
+    filename = "sets.config"
+    filepath = os.path.join(CONFIG_DIR, filename)
+    print(f'Parsing {filename}...')
+
+    config_data = None
+
+    try:
+        json_str = ''
+        with open(filepath, 'r') as f:
+            json_str = f.read()
+            f.close()
+        
+        config_data = json.loads(json_str)
+    except Exception as ex:
+        print(f'Error reading json file {filename}')
+        print(ex)
+        return
+
+    print(config_data)
+
+    global SETS
+    SETS = config_data['SETS']
+    print(f"'SETS': {SETS}")
+
+    global FORMATS
+    global FORMAT_MAPPING
+    FORMATS = config_data['FORMATS']
+    FORMAT_MAPPING = dict()
+    for f in FORMATS:
+        for s in FORMATS[f]:
+            FORMAT_MAPPING[s] = f
+    print(f"'FORMATS': {FORMATS}")
+
+    global DEFAULT_COLUMNS
+    DEFAULT_COLUMNS = config_data['DEFAULT_COLUMNS']
+
+    global DEFAULT_START_DATE
+    DEFAULT_START_DATE = config_data['DEFAULT_START_DATE']
+    print(f"'DEFAULT_START_DATE': {DEFAULT_START_DATE}")
+
+    global SET_CONFIG
+    SET_CONFIG = config_data['SET_CONFIG']
+    print(f"'SET_CONFIG': {SET_CONFIG}")
+
+
+
+load_set_config()

@@ -8,7 +8,7 @@ import pandas as pd
 
 import WUBRG
 from WUBRG import COLOUR_GROUPS, COLORS
-from settings import SETS, FORMATS, gen_card_info
+import settings 
 from utils import format_data, get_card_name
 
 
@@ -47,6 +47,8 @@ STAT_NAMES = {
 
 
 ### Config ###
+SETS = None
+FORMATS = None
 SET_CONFIG = None
 DEFAULT_START_DATE = None
 DATA_DIR = None
@@ -55,50 +57,30 @@ CARD_FILENAME = None
 
 
 def get_config():
+    global SETS
+    SETS = settings.SETS
+    print(f"'TEST': {SETS}")
+
+    global FORMATS
+    FORMATS = settings.FORMATS
+    
     global SET_CONFIG
-    SET_CONFIG = {
-        "MID" : {
-            "PremierDraft": {
-                    "Updating" : True,
-                    "StartDate" : None,
-                    "EndDate" : None
-            },
-            "TradDraft": {
-                    "Updating" : True,
-                    "StartDate" : None,
-                    "EndDate" : None
-            },
-            "QuickDraft": {
-                    "Updating" : True,
-                    "StartDate" : None,
-                    "EndDate" : None
-            }
-        }
-    }
+    SET_CONFIG = settings.SET_CONFIG
 
     global DEFAULT_START_DATE
-    DEFAULT_START_DATE = '2021-01-01'
+    DEFAULT_START_DATE = settings.DEFAULT_START_DATE
 
     global DATA_DIR
-    DATA_DIR = os.path.join(os.getcwd(), "17_lands_data")
+    DATA_DIR = settings.DATA_DIR
 
     global CONFIG_DIR
-    CONFIG_DIR = os.path.join(os.getcwd(), "config")
+    CONFIG_DIR = settings.SET_CONFIG
 
     global CARD_FILENAME
-    CARD_FILENAME = 'CARD_DATA_{0}_{1}.json'  #'{set}_{format}.json'
-    
-
-def log_config():
-    print(f"'SET_CONFIG': {SET_CONFIG}")
-    print(f"'DEFAULT_START_DATE': {DEFAULT_START_DATE}")
-    print(f"'DATA_DIR': {DATA_DIR}")
-    print(f"'CONFIG_DIR': {CONFIG_DIR}")
-    print(f"'CARD_FILENAME': {CARD_FILENAME}")
+    CARD_FILENAME = settings.CARD_DATA_FILENAME  #'{set}_{format}.json'
     
 
 get_config()
-log_config()
 
 
 
@@ -188,7 +170,7 @@ def fetch_deck_data():
 ### Card Level Data ###
 
 def get_scryfall_data(raw_cardname):
-    card_info = gen_card_info()
+    card_info = settings.gen_card_info_struct()
     ret = {'card_info': card_info, 'err_msg': None}
     
     try:
@@ -344,6 +326,7 @@ def update_card_data(s, f, force = False):
 
         # Otherwise, skip the update.
         return False
+
 
     if force or allow_update(s, f):
         save_card_data(s, f)
