@@ -173,6 +173,10 @@ def load_set_config():
     SET_CONFIG = config_data['SET_CONFIG']
     print(f"'SET_CONFIG': {SET_CONFIG}")
 
+    global BROADCAST_CHANNELS
+    BROADCAST_CHANNELS = config_data['BROADCAST_CHANNELS']
+    print(f"'BROADCAST_CHANNELS': {BROADCAST_CHANNELS}")
+
 
 
 load_set_config()

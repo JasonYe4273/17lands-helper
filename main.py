@@ -4,8 +4,8 @@ import requests
 import time
 from datetime import date, datetime, timedelta
 from discord.ext import tasks
+import settings
 from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE, DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID, QUOTE_PAIRS
-from settings import SETS, FORMATS, FORMAT_MAPPING, DATA_COMMANDS
 import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
 from embed_maker import gen_card_embed, supported_color_strings
@@ -15,16 +15,44 @@ import data_core
 client = discord.Client()
 
 
+SETS = settings.SETS
+FORMATS = settings.FORMATS
+FORMAT_MAPPING = settings.FORMAT_MAPPING
+DATA_COMMANDS = settings.DATA_COMMANDS
+SET_CONFIG = settings.SET_CONFIG
+DEFAULT_START_DATE = settings.DEFAULT_START_DATE
+DATA_DIR = settings.DATA_DIR
+CONFIG_DIR = settings.SET_CONFIG
+CARD_FILENAME = settings.CARD_DATA_FILENAME  #'{set}_{format}.json'
+BROADCAST_CHANNELS = settings.BROADCAST_CHANNELS
+
 DATA_CACHE = None
 
+
+def get_channel(channel_info):
+    guild_id = channel_info['guild_id']
+    channel_id = channel_info['channel_id']
+    return client.get_guild(guild_id).get_channel(channel_id)
 
 async def send_embed_message(channel, embed):
     print(f"Sending embedded message to channel '#{channel}'")
     await channel.send(embed=embed)
 
 async def send_message(channel, message):
-    print(f'Sending message to channel {channel}: {message}')
+    print(f"Sending message to channel '#{channel}': {message}")
     await channel.send(message)
+
+async def send_embed_broadcast(embed):
+    for channel_name in BROADCAST_CHANNELS:
+        await send_embed_message(get_channel(BROADCAST_CHANNELS[channel_name]), embed)
+
+async def send_broadcast(message):
+    for channel in BROADCAST_CHANNELS:
+        await send_message(get_channel(BROADCAST_CHANNELS[channel_name]), message)
+
+async def log(message):
+    await send_message(LOG_CHANNEL, message)
+
 
 def update_data():
     data_core.init_cache()
@@ -44,6 +72,7 @@ async def on_ready():
     WUBRG.cache_manamojis(client)
     #update_data()
     print('Logged in as {0.user}'.format(client))
+    print(get_channel(BROADCAST_CHANNELS["CrossComputer"]))
 
 
 

@@ -47,40 +47,13 @@ STAT_NAMES = {
 
 
 ### Config ###
-SETS = None
-FORMATS = None
-SET_CONFIG = None
-DEFAULT_START_DATE = None
-DATA_DIR = None
-CONFIG_DIR = None
-CARD_FILENAME = None
-
-
-def get_config():
-    global SETS
-    SETS = settings.SETS
-    print(f"'TEST': {SETS}")
-
-    global FORMATS
-    FORMATS = settings.FORMATS
-    
-    global SET_CONFIG
-    SET_CONFIG = settings.SET_CONFIG
-
-    global DEFAULT_START_DATE
-    DEFAULT_START_DATE = settings.DEFAULT_START_DATE
-
-    global DATA_DIR
-    DATA_DIR = settings.DATA_DIR
-
-    global CONFIG_DIR
-    CONFIG_DIR = settings.SET_CONFIG
-
-    global CARD_FILENAME
-    CARD_FILENAME = settings.CARD_DATA_FILENAME  #'{set}_{format}.json'
-    
-
-get_config()
+SETS = settings.SETS
+FORMATS = settings.FORMATS
+SET_CONFIG = settings.SET_CONFIG
+DEFAULT_START_DATE = settings.DEFAULT_START_DATE
+DATA_DIR = settings.DATA_DIR
+CONFIG_DIR = settings.SET_CONFIG
+CARD_DATA_FILENAME = settings.CARD_DATA_FILENAME  #'{set}_{format}.json'
 
 
 
@@ -258,7 +231,7 @@ def fetch_card_data(s, f, delay = 5):
 
 def save_card_data(s, f):
     # Convert the aggreate dictionary into a .json file, and save it.
-    filename = CARD_FILENAME.format(s, f)
+    filename = CARD_DATA_FILENAME.format(s, f)
     try:
         card_data = fetch_card_data(s, f)
         filepath = os.path.join(DATA_DIR, filename)
@@ -274,7 +247,7 @@ def save_card_data(s, f):
 
 
 def load_card_data(s, f):
-    filename = CARD_FILENAME.format(s, f)
+    filename = CARD_DATA_FILENAME.format(s, f)
     filepath = os.path.join(DATA_DIR, filename)
     print(f'Parsing {filename}...')
 
@@ -292,7 +265,7 @@ def load_card_data(s, f):
 
 def update_card_data(s, f, force = False):
     def allow_update(s, f):
-        filepath = os.path.join(DATA_DIR, CARD_FILENAME.format(s, f))
+        filepath = os.path.join(DATA_DIR, CARD_DATA_FILENAME.format(s, f))
         
         # If the data doesn't exist,
         if not os.path.isfile(filepath):
