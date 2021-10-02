@@ -140,13 +140,43 @@ def gen_metadata_dict_struct():
     return ret
 
 
+def gen_card_call_struct():
+    ret = {
+        'CARD' : gen_card_info_struct(),
+        'SET' : None,
+        'FORMATS' : None,
+        'COLORS' : None,
+        'COLUMNS' : None,
+        'ERR' : None,
+        'EXTRA' : None
+    }
+    return ret
 
-def load_set_config():
-    filename = "sets.config"
-    filepath = os.path.join(CONFIG_DIR, filename)
+
+def gen_msg_response_struct():
+    ret = {
+        'TYPE' : None,  # 'MSG', 'EMBED', 'FILE'
+        'CONTENT' : None,
+        'PM' : None,
+        'BROADCAST' : None
+    }
+    return ret
+
+
+def gen_user_config_struct():
+    ret = {
+        "Formats" : {
+            "PremierDraft" : False,
+            "TradDraft" : False,
+            "QuickDraft" : False
+        }
+    }
+    return ret
+
+
+def load_json_file(folder, filename):
+    filepath = os.path.join(folder, filename)
     print(f'Parsing {filename}...')
-
-    config_data = None
 
     try:
         json_str = ''
@@ -154,13 +184,15 @@ def load_set_config():
             json_str = f.read()
             f.close()
         
-        config_data = json.loads(json_str)
+            return json.loads(json_str)
     except Exception as ex:
         print(f'Error reading json file {filename}')
         print(ex)
-        return
+        return None
 
-    print(config_data)
+
+def load_set_config():
+    config_data = load_json_file(CONFIG_DIR, "sets.config")
 
     global SETS
     SETS = config_data['SETS']
@@ -192,4 +224,20 @@ def load_set_config():
 
 
 
+def load_user_config():
+    config_data = load_json_file(CONFIG_DIR, "users.config")
+
+    print(config_data)
+    
+    global USER_CONFIG
+    USER_CONFIG = config_data
+    print(f"'CONFIG_DIR': {CONFIG_DIR}")
+
+
+def save_user_config():
+    print('WARNING: save_user_config not implemeneted.')
+    # TODO: Save the user config when someone updates their settings.
+    pass
+
 load_set_config()
+load_user_config()

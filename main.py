@@ -34,6 +34,10 @@ def get_channel(channel_info):
     channel_id = channel_info['channel_id']
     return client.get_guild(guild_id).get_channel(channel_id)
 
+def get_private_chat(user):
+    #TODO: Figure out how to dm a user.
+    pass
+
 async def send_embed_message(channel, embed):
     print(f"Sending embedded message to channel '#{channel}'")
     await channel.send(embed=embed)
@@ -216,7 +220,6 @@ async def data_query(query, channel):
         query_str += f'&colors={colors}'
 
 
-    print('pre: sent = []')
     sent = []
     for s in sets:
         data_to_use = {}

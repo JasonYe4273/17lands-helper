@@ -179,7 +179,7 @@ def get_color_map(color_str):
 def get_color_supersets(color_id, l=5):
     colour_ids = list()
     
-    cis = set(WUBRG.get_color_string(color_id))
+    cis = set(get_color_string(color_id))
     for c in COLOUR_GROUPS:       
         if len(c) <= l and cis < set(c):
             colour_ids.append(c)
@@ -192,7 +192,7 @@ def get_color_supersets(color_id, l=5):
 def get_color_subsets(color_id, l=1):
     colour_ids = list()
     
-    cis = set(WUBRG.get_color_string(color_id))
+    cis = set(get_color_string(color_id))
     for c in COLOUR_GROUPS:
         if len(c) >= l and cis > set(c) :
             colour_ids.append(c)
