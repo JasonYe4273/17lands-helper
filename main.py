@@ -1,11 +1,11 @@
 import discord
+from discord.ext import tasks
 import os
 import requests
 import time
 from datetime import date, datetime, timedelta
-from discord.ext import tasks
-import settings
-from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE, DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID, QUOTE_PAIRS
+
+from settings import *
 import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
 from embed_maker import gen_card_embed, supported_color_strings
@@ -15,16 +15,16 @@ import data_core
 client = discord.Client()
 
 
-SETS = settings.SETS
-FORMATS = settings.FORMATS
-FORMAT_MAPPING = settings.FORMAT_MAPPING
-DATA_COMMANDS = settings.DATA_COMMANDS
-SET_CONFIG = settings.SET_CONFIG
-DEFAULT_START_DATE = settings.DEFAULT_START_DATE
-DATA_DIR = settings.DATA_DIR
-CONFIG_DIR = settings.SET_CONFIG
-CARD_FILENAME = settings.CARD_DATA_FILENAME  #'{set}_{format}.json'
-BROADCAST_CHANNELS = settings.BROADCAST_CHANNELS
+##SETS = settings.SETS
+##FORMATS = settings.FORMATS
+##FORMAT_MAPPING = settings.FORMAT_MAPPING
+##DATA_COMMANDS = settings.DATA_COMMANDS
+##SET_CONFIG = settings.SET_CONFIG
+##DEFAULT_START_DATE = settings.DEFAULT_START_DATE
+##DATA_DIR = settings.DATA_DIR
+##CONFIG_DIR = settings.SET_CONFIG
+##CARD_FILENAME = settings.CARD_DATA_FILENAME  #'{set}_{format}.json'
+##BROADCAST_CHANNELS = settings.BROADCAST_CHANNELS
 
 DATA_CACHE = None
 

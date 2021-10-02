@@ -1,19 +1,10 @@
 import discord
 import time
 from datetime import date
-import WUBRG
-from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
-from utils import format_data, get_card_name
 
-
-FORMAT_NICKNAMES = {
-    'PremierDraft': 'Bo1',
-    'TradDraft': 'Bo3',
-    'QuickDraft': 'Quick',
-    'Sealed': 'Seal',
-    'TradSealed': 'Bo3Seal',
-    'DraftChallenge': 'Chal.',
-}
+from WUBRG import *
+from utils import *
+from settings import *
 
 
 
@@ -35,8 +26,8 @@ def supported_color_strings():
         d = COLOR_ALIASES_SUPPORT[d_key]
         msg = ""
         for s in d:
-            color_string = WUBRG.get_color_string(s)
-            color_id = WUBRG.emojify_color_id(color_string)
+            color_string = get_color_string(s)
+            color_id = emojify_color_id(color_string)
             
             msg +=color_id + ' - ' + s + '\r\n'
         ret.add_field(name=d_key, value=msg, inline=True)
@@ -62,23 +53,23 @@ def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, 
     stored_name = card['stored_name']
 
     
-    title = name + " " + WUBRG.emojify_mana_cost(mana_cost)
+    title = name + " " + emojify_mana_cost(mana_cost)
     embed = new_data_embed(title, url="https://www.17lands.com/card_ratings")
 
     # Generate a field to show the scope of the data.
     date_range = f"Date Range:\t\t {start_date} to {end_date}"  + '\r\n'
 
-    filt_emojis = WUBRG.emojify_color_id(color_filter)
+    filt_emojis = emojify_color_id(color_filter)
     if filt_emojis == "":
         filt_emojis = "*None*"
     filt = "Colour filter: \t\t" + filt_emojis + '\r\n'
     # TODO: fetch color winrate from 17lands
-    color_winrate = ""#"Avg. " + WUBRG.emojify_color_id(color_filter) + " Winrate: \t" + "%00.00" + '\r\n'
+    color_winrate = ""#"Avg. " + emojify_color_id(color_filter) + " Winrate: \t" + "%00.00" + '\r\n'
     embed.add_field(name="Data Info", value=date_range + filt + color_winrate, inline=False)
   
 
     # Generate a field which acts as the labels for the data.
-    # SET = WUBRG.get_emoji("ELD") # TODO: Find and add set emojis to the sever to use with WUBRG.py
+    # SET = get_emoji("ELD") # TODO: Find and add set emojis to the sever to use with WUBRG.py
     formats_column = "\r\n".join([f'*{FORMAT_NICKNAMES[f]}*' for f in formats])
     embed.add_field(name=f" - {set_code} - ", value=formats_column, inline=True)
 
@@ -102,8 +93,8 @@ def gen_colour_rating_embed():
         d = COLOUR_GROUPINGS[d_key]
         msg = ""
         for s in d:
-            color_string = WUBRG.get_color_string(s)
-            color_id = WUBRG.emojify_color_id(color_string)
+            color_string = get_color_string(s)
+            color_id = emojify_color_id(color_string)
 
             # TODO: Populate with real data.
             msg +=  color_id + ': ' + "`% 00.00`" + '\r\n'

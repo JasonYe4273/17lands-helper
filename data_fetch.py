@@ -8,7 +8,7 @@ import pandas as pd
 
 import WUBRG
 from WUBRG import COLOUR_GROUPS, COLORS
-import settings 
+from settings  import *
 from utils import format_data, get_card_name
 
 
@@ -47,13 +47,13 @@ STAT_NAMES = {
 
 
 ### Config ###
-SETS = settings.SETS
-FORMATS = settings.FORMATS
-SET_CONFIG = settings.SET_CONFIG
-DEFAULT_START_DATE = settings.DEFAULT_START_DATE
-DATA_DIR = settings.DATA_DIR
-CONFIG_DIR = settings.SET_CONFIG
-CARD_DATA_FILENAME = settings.CARD_DATA_FILENAME  #'{set}_{format}.json'
+##SETS = settings.SETS
+##FORMATS = settings.FORMATS
+##SET_CONFIG = settings.SET_CONFIG
+##DEFAULT_START_DATE = settings.DEFAULT_START_DATE
+##DATA_DIR = settings.DATA_DIR
+##CONFIG_DIR = settings.SET_CONFIG
+##CARD_DATA_FILENAME = settings.CARD_DATA_FILENAME  #'{set}_{format}.json'
 
 
 
@@ -135,7 +135,7 @@ def panadafy_dict(d):
 ### Deck Level Data ###
             
 def fetch_deck_data():
-    
+    print(f'WARNING: fetch_deck_data not yet implemented.')
     pass
 
 
@@ -143,7 +143,7 @@ def fetch_deck_data():
 ### Card Level Data ###
 
 def get_scryfall_data(raw_cardname):
-    card_info = settings.gen_card_info_struct()
+    card_info = gen_card_info_struct()
     ret = {'card_info': card_info, 'err_msg': None}
     
     try:
@@ -309,7 +309,7 @@ def update_card_data(s, f, force = False):
 ### Metagame Level Data ###
 
 def fetch_meta_data():
-    
+    print(f'WARNING: fetch_meta_data not yet implemented.')    
     pass
 
 

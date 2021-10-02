@@ -128,6 +128,19 @@ def gen_card_info_struct():
 
 
 
+def gen_metadata_dict_struct():
+    ret = {
+        'Winrate' : None,
+        'Winrate Delta' : None,
+        'Games Played' : None, 
+        'Metagame Share' : None,
+        'Top Commons' : None,
+        'Top Uncommons' : None
+    }
+    return ret
+
+
+
 def load_set_config():
     filename = "sets.config"
     filepath = os.path.join(CONFIG_DIR, filename)

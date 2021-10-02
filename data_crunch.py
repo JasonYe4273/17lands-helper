@@ -1,15 +1,10 @@
-import os
-import json
-import requests
-from time import sleep
-from datetime import date, time, datetime, timedelta
 import numpy as np
 import pandas as pd
+
 import WUBRG
 from WUBRG import COLOUR_GROUPS, COLORS
 import data_fetch
-from settings import SETS, FORMATS
-
+from settings import *
 
 PANDAS_CACHE = data_fetch.PANDAS_CACHE
 
@@ -124,23 +119,11 @@ def get_color_win_rates():
     return win_rates
 
 
-def gen_metadata_dict():
-    ret = {
-        'Winrate' : None,
-        'Winrate Delta' : None,
-        'Games Played' : None, 
-        'Metagame Share' : None,
-        'Top Commons' : None,
-        'Top Uncommons' : None
-    }
-    return ret
-
-
 # Get metagame data for a given colour group.
 def get_color_group_metadata(s, f, colors, n=5, stat='GIH WR', columns=None):
     # Set up the data.
     c = WUBRG.get_color_identity(colors)
-    metagame_data = gen_metadata_dict()
+    metagame_data = gen_metadata_dict_struct()
     
     # Get the frame, and handle column filtering.
     df = PANDAS_CACHE[s][f][c]
@@ -168,7 +151,7 @@ def get_color_group_metadata(s, f, colors, n=5, stat='GIH WR', columns=None):
 def get_color_overview(s, f, main_color, stat='GIH WR', columns=None):
     # Set up the data.
     metagame_dict = dict()
-    metagame_data = gen_metadata_dict()
+    metagame_data = gen_metadata_dict_struct()
     metagame_dict[main_color] = metagame_data
     
     # Get the frame, and handle column filtering.

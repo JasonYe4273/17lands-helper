@@ -1,12 +1,3 @@
-import os
-import json
-import requests
-from time import sleep
-from datetime import date, time, datetime, timedelta
-import numpy as np
-import pandas as pd
-import WUBRG
-from WUBRG import COLOUR_GROUPS, COLORS
 import data_fetch
 import data_crunch
 
