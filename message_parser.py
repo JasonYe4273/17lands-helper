@@ -2,7 +2,8 @@ import re
 
 from settings import *
 from WUBRG import *
-from data_fetch import get_scryfall_data
+from data_fetch import *
+from embed_maker import *
 
 
 
@@ -55,9 +56,11 @@ def parse_card_call(card_name, opt_str, user):
     call_struct['FORMATS'] = get_default_formats(user)
 
     # TODO: Populate by defult based on card colour
+    print(call_struct)
     call_struct['COLORS'] = [''] + get_color_supersets(info['card_info']['color_identity'], 2)
     call_struct['COLUMNS'] = DEFAULT_COLUMNS
     # If there are no options to use, return the info as-is.
+    print(call_struct)
     if opt_str == '':
         return call_struct
         
@@ -105,13 +108,13 @@ def parse_message(message):
         card_calls = re_comp.findall(msg)
         msg_structs = []
 
-        for calls in card_calls:
-            print(f"Card: '{calls[1]}', Options: '{calls[2]}'")
-            card_struct = parse_card_call(calls[1], calls[2], user)
-            print(struct)
+        for call in card_calls:
+            print(f"Card: '{call[1]}', Options: '{call[2]}'")
+            card_struct = parse_card_call(call[1], call[2], user)
+            print(card_struct)
 
             # TODO: Generate embed for card based on data.
-            embed = None
+            embed = gen_card_embeds_V2(card_struct)
             struct = populate_msg_response_struct('EMBED', embed)
             msg_structs.append(struct)
 

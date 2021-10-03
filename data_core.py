@@ -1,26 +1,11 @@
-import data_fetch
-import data_crunch
-
-
-
-DATA_CACHE = data_fetch.get_set_tree()
-PANDAS_CACHE = data_fetch.get_set_tree()
-WINRATES = data_fetch.get_set_tree()
+from data_fetch import *
+from data_crunch import *
 
 
 def init_cache():
     # Update and load all data.
     data_fetch.update_all_data()
     data_fetch.load_all_data()
-
-    global DATA_CACHE
-    DATA_CACHE = data_fetch.DATA_CACHE
-
-    global PANDAS_CACHE
-    PANDAS_CACHE = data_fetch.PANDAS_CACHE
-
-    #global WINRATES
-    #WINRATES = data_fetch.WINRATES
 
 
 def query_scryfall(card_name):
@@ -38,6 +23,17 @@ def query_cache(_set, _format, color_filter, cardname):
         return None
     return DATA_CACHE[_set][_format][color_filter][cardname]
 
+
+def query_frames(_set, _format, color_filter, cardname):
+    if _set not in PANDAS_CACHE:
+        return None
+    if _format not in PANDAS_CACHE[_set]:
+        return None
+    if color_filter not in PANDAS_CACHE[_set][_format]:
+        return None
+    if cardname not in PANDAS_CACHE[_set][_format][color_filter]:
+        return None
+    return PANDAS_CACHE[_set][_format][color_filter].loc[cardname]
 
 
 if __name__ == "__main__":

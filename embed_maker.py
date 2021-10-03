@@ -5,7 +5,7 @@ from datetime import date
 from WUBRG import *
 from utils import *
 from settings import *
-
+from data_core import *
 
 
 ### Help Embeds ###
@@ -81,6 +81,86 @@ def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, 
 
 
     return embed
+
+
+# Returns an embed which displays the game stats about a particular card.
+def gen_card_embeds_V2(call_struct, start_date=None, end_date=None):
+        
+    
+    card = call_struct['CARD']
+    s = call_struct['SET']
+    formats = call_struct['FORMATS']
+    color_filters = call_struct['COLORS']
+    columns = call_struct['COLUMNS']
+
+    def remove(col):
+        if col in columns:
+            columns.remove(col)
+    remove('Color')
+    remove('Rarity')
+
+    # TODO: Remove colour and rarity from columns.
+            
+    mana_cost = card['mana_cost']
+    name = card['name']
+    stored_name = card['stored_name']
+
+##    # Generate a field to show the scope of the data.
+##    if start_date is None:
+##        default = SET_CONFIG[s][formats[0]]['StartDate']
+##        start_date = default if default is not None else DEFAULT_START_DATE
+##    if end_date is None:
+##        default = SET_CONFIG[s][formats[0]]['EndDate']
+##        end_date = default if default is not None else date.today()
+##    date_range = f"Date Range:\t\t {start_date} to {end_date}"  + '\r\n'
+
+
+    # TODO: fetch color winrate from 17lands
+        
+    title = name + " " + emojify_mana_cost(mana_cost)
+    #avreage_winrate = "Avg. Overall Winrate: \t" + "%00.00" + '\r\n'
+    #color_winrate = "Avg. " + emojify_color_id(card['color_identity']) + " Winrate: \t" + "%00.00" + '\r\n'
+    description = ""
+    embed = new_data_embed(title, description, url=card['url'])
+##    embed.add_field(name="avreage_winrate + color_winrate", value="", inline=False)
+  
+
+    # Generate a field which acts as the labels for the data.
+    # SET = get_emoji("ELD") # TODO: Find and add set emojis to the sever to use with WUBRG.py
+    format_temp = []
+    color_temp = []
+    for x in formats:
+        for y in color_filters:
+            format_temp.append(x)
+            color_temp.append(y)
+
+    FORMAT_STRING = "`{:^7}`"
+    formats_column = "\r\n".join([FORMAT_STRING.format(FORMAT_NICKNAMES[f]) for f in format_temp])
+    embed.add_field(name=f"Format", value=formats_column, inline=True)
+
+    # Generate a field which acts as the labels for the data.
+    # SET = get_emoji("ELD") # TODO: Find and add set emojis to the sever to use with WUBRG.py
+    colors_column = "\r\n".join([f'` `**NONE**' if not c else f'` `{emojify_color_id(c)}' for c in color_temp])
+    embed.add_field(name=f"` `Colors", value=colors_column, inline=True)
+
+    # Generate a field which is populated with a 'table' of card data.
+    FORMAT_STRING = "`{:^6}`"
+    fields_strs = [FORMAT_STRING.format(cols) for cols in columns]
+    print(format_temp)
+    print(color_temp)
+    print(fields_strs)
+
+    data_strs = ""
+    for x in range(0, len(format_temp)):
+        data = PANDAS_CACHE[s][format_temp[x]][color_temp[x]][columns].loc[name]
+        print(" ".join([str(type(d)) for d in data]))
+        data_strs += " ".join([FORMAT_STRING.format(format_data(d)) for d in data]) + '\r\n'
+
+    embed.add_field(name=" ".join(fields_strs), value=data_strs, inline=True)
+
+
+    return embed
+
 
 # Returns an embed which shows the win rates diffenet colours of decks.
 # NOTE: Unfinished. Needs to be populated with real data.

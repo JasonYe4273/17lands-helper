@@ -1,6 +1,8 @@
 import os
 import json
 
+from utils import *
+
 ### Parsing Consts ###
 COMMAND_STR = '17!'
 DATA_QUERY_L = '{{'
@@ -99,7 +101,8 @@ def gen_card_info_struct():
         'cmc': None,
         'color_identity': None,
         'set' : None,
-        'id': None
+        'id': None,
+        'url' : None
     }
 
 ##CARD_INFO = {
@@ -174,21 +177,7 @@ def gen_user_config_struct():
     return ret
 
 
-def load_json_file(folder, filename):
-    filepath = os.path.join(folder, filename)
-    print(f'Parsing {filename}...')
 
-    try:
-        json_str = ''
-        with open(filepath, 'r') as f:
-            json_str = f.read()
-            f.close()
-        
-            return json.loads(json_str)
-    except Exception as ex:
-        print(f'Error reading json file {filename}')
-        print(ex)
-        return None
 
 
 def load_set_config():
@@ -235,9 +224,8 @@ def load_user_config():
 
 
 def save_user_config():
-    print('WARNING: save_user_config not implemeneted.')
-    # TODO: Save the user config when someone updates their settings.
-    pass
+    success = save_json_file(CONFIG_DIR, "users.config", USER_CONFIG)
+    return success
 
 load_set_config()
 load_user_config()

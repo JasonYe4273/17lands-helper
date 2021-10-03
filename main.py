@@ -6,11 +6,10 @@ import time
 from datetime import date, datetime, timedelta
 
 from settings import *
-import WUBRG
-from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
-from embed_maker import gen_card_embed, supported_color_strings
-from utils import format_data, get_card_name
-import data_core
+from WUBRG import *
+from embed_maker import *
+from utils import *
+from data_core import *
 
 client = discord.Client()
 

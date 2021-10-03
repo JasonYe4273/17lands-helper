@@ -6,10 +6,9 @@ from datetime import date, time, datetime, timedelta
 import numpy as np
 import pandas as pd
 
-import WUBRG
-from WUBRG import COLOUR_GROUPS, COLORS
+from WUBRG import *
 from settings  import *
-from utils import format_data, get_card_name
+from utils import *
 
 
 RARITY_ALIASES = {
@@ -124,11 +123,14 @@ def panadafy_dict(d):
     if len(d) == 0:
         return frame
     
-    for col in ["GP WR", "OH WR", "GD WR", "GIH WR", "GND WR", "IWD"]:
-        frame[col] = frame[col] * 100
+##    for col in ["GP WR", "OH WR", "GD WR", "GIH WR", "GND WR", "IWD"]:
+##        frame[col] = frame[col] * 100
+
+##    for col in ["# Seen", "OH WR", "GD WR", "GIH WR", "GND WR", "IWD"]:
+##        frame[col] = # To int.
     
     frame['Rarity'] = frame['Rarity'].map(RARITY_ALIASES)
-    frame = frame.round(3)
+##    frame = frame.round(3)
     return frame
 
 
@@ -147,7 +149,7 @@ def get_scryfall_data(raw_cardname):
     ret = {'card_info': card_info, 'err_msg': None}
     
     try:
-        response = requests.get(f'https://api.scryfall.com/cards/named?fuzzy={raw_cardname}&set_type=expansion').json()
+        response = requests.get(f'https://api.scryfall.com/cards/named?fuzzy={raw_cardname}').json()
         if response['object'] == 'error':
             if response['details'][:20] == 'Too many cards match':
                 ret['err_msg'] = f'Error: multiple card matches for "{raw_cardname}"'
@@ -160,21 +162,23 @@ def get_scryfall_data(raw_cardname):
             card_info['name'] = card['name']
             card_info['stored_name'] = get_card_name(card)
             card_info['cmc'] = card['cmc']
-            card_info['color_identity'] = WUBRG.get_color_identity(''.join(card['color_identity']))
+            card_info['color_identity'] = get_color_identity(''.join(card['color_identity']))
             card_info['id'] = card['id']
+            card_info['url'] = card['scryfall_uri']
             if card['set_type'] == 'promo':
                 card_info['set'] = card['set'][1:].upper()
             else:
                 card_info['set'] = card['set'].upper()
 
             if 'card_faces' in card:
-                card_info['mana_cost'] = WUBRG.parse_cost(card['card_faces'][0]['mana_cost'])
+                card_info['mana_cost'] = parse_cost(card['card_faces'][0]['mana_cost'])
                 #card_info['colors'] = card['card_faces'][0]['colors'] + card['card_faces'][1]['colors']
             else:
-                card_info['mana_cost'] = WUBRG.parse_cost(card['mana_cost'])
+                card_info['mana_cost'] = parse_cost(card['mana_cost'])
                 #card_info['colors'] = WUBRG.get_color_identity(''.join(card['colors']))
 
-    except:
+    except Exception as ex:
+        print(ex)
         ret['err_msg'] = f'Error querying Scryfall for {raw_cardname}'
 
     return ret
@@ -231,36 +235,15 @@ def fetch_card_data(s, f, delay = 5):
 
 def save_card_data(s, f):
     # Convert the aggreate dictionary into a .json file, and save it.
+    card_data = fetch_card_data(s, f)
     filename = CARD_DATA_FILENAME.format(s, f)
-    try:
-        card_data = fetch_card_data(s, f)
-        filepath = os.path.join(DATA_DIR, filename)
-        file = open(filepath, 'w')
-        file.write(json.dumps(card_data))
-        file.close()
-        
-        print(f'File {filename} created.')
-        return True
-    except Exception as ex:
-        print(f'Error creating {filename}!')
-        return False
+    save_json_file(DATA_DIR, filename, card_data)
 
 
 def load_card_data(s, f):
     filename = CARD_DATA_FILENAME.format(s, f)
-    filepath = os.path.join(DATA_DIR, filename)
+    return load_json_file(DATA_DIR, filename)
     print(f'Parsing {filename}...')
-
-    try:
-        json_str = ''
-        with open(filepath, 'r') as f:
-            json_str = f.read()
-            f.close()
-        
-        return json.loads(json_str)
-    except:
-        print(f'Error reading json file {filename}')
-        return None    
 
 
 def update_card_data(s, f, force = False):
