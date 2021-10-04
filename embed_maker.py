@@ -151,7 +151,7 @@ def gen_card_embeds_V2(call_struct, start_date=None, end_date=None):
     for x in range(0, len(format_temp)):
         # TODO: Create a map to use to determine formating, based on column name.
         data = PANDAS_CACHE[s][format_temp[x]][color_temp[x]][columns].loc[stored_name]
-        data_strs += " ".join([FORMAT_STRING.format(format_data(d)) for d in data]) + '\r\n'
+        data_strs += " ".join([STAT_FORMAT_STRINGS[columns[i]].format(data[i]) for i in range(len(data))]) + '\r\n'
 
     embed.add_field(name=" ".join(fields_strs), value=data_strs, inline=True)
 

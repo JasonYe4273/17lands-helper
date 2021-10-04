@@ -123,14 +123,11 @@ def panadafy_dict(d):
     if len(d) == 0:
         return frame
     
-##    for col in ["GP WR", "OH WR", "GD WR", "GIH WR", "GND WR", "IWD"]:
-##        frame[col] = frame[col] * 100
-
-##    for col in ["# Seen", "OH WR", "GD WR", "GIH WR", "GND WR", "IWD"]:
-##        frame[col] = # To int.
+    for col in ["GP WR", "OH WR", "GD WR", "GIH WR", "GND WR", "IWD"]:
+        frame[col] = frame[col] * 100
     
     frame['Rarity'] = frame['Rarity'].map(RARITY_ALIASES)
-##    frame = frame.round(3)
+    frame = frame.round(3)
     return frame
 
 
