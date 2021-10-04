@@ -50,17 +50,23 @@ def parse_card_call(card_name, opt_str, user):
     call_struct = gen_card_call_struct()
     info = get_scryfall_data(card_name)
 
-    call_struct['CARD'] = info['card_info']
     call_struct['ERR'] = info['err_msg']
-    call_struct['SET'] = info['card_info']['set']
+    if call_struct['ERR'] is not None:
+        call_struct['ERR'] = call_struct['ERR'].title()
+        return call_struct
+
+    call_struct['CARD'] = info['card_info']
     call_struct['FORMATS'] = get_default_formats(user)
+    call_struct['SET'] = info['card_info']['set']
+    if call_struct['SET'] not in SETS:
+        call_struct['ERR'] = f"Data on '{info['card_info']['name']}' in set '{call_struct['SET']}' not available."
+        return call_struct
 
     # TODO: Populate by defult based on card colour
-    print(call_struct)
-    call_struct['COLORS'] = [''] + get_color_supersets(info['card_info']['color_identity'], 2)
+    color_sets = get_color_supersets(info['card_info']['color_identity'], 2)
+    call_struct['COLORS'] = [''] + (color_sets if color_sets else [info['card_info']['color_identity']])
     call_struct['COLUMNS'] = DEFAULT_COLUMNS
     # If there are no options to use, return the info as-is.
-    print(call_struct)
     if opt_str == '':
         return call_struct
         
@@ -114,8 +120,11 @@ def parse_message(message):
             print(card_struct)
 
             # TODO: Generate embed for card based on data.
-            embed = gen_card_embeds_V2(card_struct)
-            struct = populate_msg_response_struct('EMBED', embed)
-            msg_structs.append(struct)
+            if card_struct['ERR'] is not None:
+                msg_structs.append(populate_msg_response_struct('MSG', card_struct['ERR']))
+            else:
+                embed = gen_card_embeds_V2(card_struct)
+                struct = populate_msg_response_struct('EMBED', embed)
+                msg_structs.append(struct)
 
         return msg_structs
