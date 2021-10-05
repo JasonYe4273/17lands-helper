@@ -4,29 +4,10 @@ from settings import *
 from WUBRG import *
 from data_fetch import *
 from embed_maker import *
-from message_sender import *
 
 
 
-def populate_msg_response_struct(msg_type, msg_data, use_pm=False, broadcast=False):
-    ret = gen_msg_response_struct()
-    ret['TYPE'] = msg_type
-    ret['CONTENT'] = msg_data
-    ret['PM'] = use_pm
-    ret['BROADCAST'] = broadcast
-
-
-    #ret['CHANNELS'] = []
-    #ret['MSG'] = ''
-    #ret['EMBED'] = None
-    #ret['CALLBACK']
-    return ret
-
-
-### Card Calls ###
-
-
-
+### Card Call Parsing ###
 
 def parse_options(opt_str):
     option_keys = ['verbose', '-v', 'start=', '-s=', 'end=', '-e=', 'months=', '-m=', 'weeks=', '-w=', 'days=', '-c=', 'colors=', '-f=', 'formats=', 'set=']
@@ -35,85 +16,81 @@ def parse_options(opt_str):
 
 
 def parse_card_call(card_name, opt_str, user):
-    call_struct = gen_card_call_struct()
     info = get_scryfall_data(card_name)
 
-    call_struct['ERR'] = info['err_msg']
-    if call_struct['ERR'] is not None:
-        call_struct['ERR'] = call_struct['ERR'].title()
-        return call_struct
+    # TODO: Ravamp this to be simpler and simply return a card_info_struct
+    
+    if info['err_msg'] is not None:
+        return info
 
-    call_struct['CARD'] = info['card_info']
-    call_struct['FORMATS'] = get_default_formats(str(user))
-    call_struct['SET'] = info['card_info']['set']
-    if call_struct['SET'] not in SETS:
-        call_struct['ERR'] = f"Data on '{info['card_info']['name']}' in set '{call_struct['SET']}' not available."
-        return call_struct
+    info['formats'] = get_default_formats(str(user))
+    info['columns'] = DEFAULT_COLUMNS
 
-    # TODO: Populate by defult based on card colour
-    color_sets = get_color_supersets(info['card_info']['color_identity'], 2)
-    call_struct['COLORS'] = [''] + (color_sets if color_sets else [info['card_info']['color_identity']])
-    call_struct['COLUMNS'] = DEFAULT_COLUMNS
-    # If there are no options to use, return the info as-is.
-    if opt_str == '':
-        return call_struct
-        
-    options = parse_options(opt_str)
+    # Get all of the 2-colour combinations which contains the card colour.
+    color_sets = get_color_supersets(info['color_identity'], 2)
+    info['colors'] = [''] + (color_sets if color_sets else [info['color_identity']])
+    
+    # If there are options to use, parse them and modify the info.
+    if opt_str != '':
+        options = parse_options(opt_str)
 
-    # TODO: Allow override in options
-    #call_struct['SET'] = info['card_info']['set']
+        # TODO: Allow override in options
+        #set_override = ""
+        #info['set'] = set_override]
 
-    # TODO: Allow override in options
-    #call_struct['COLORS'] = ['']
+        # TODO: Allow override in options
+        #color_override = []
+        #info['colors'] = [''] + color_override
 
-    return call_struct
-
+    # Validate the data
+    if info['set'] not in SETS:
+        info['err_msg'] = f"Data on '{info['name']}' in set '{info['set']}' not available."
+        return info
 
 
-### Command Calls ###
+    return info
 
-def parse_command_call(command_str, user, is_pm):
-    if command_str in ['colors', 'colours']:
-        return populate_msg_response_struct('EMBED', supported_color_strings())
-    elif command_str in ['h', 'help']:
-        return populate_msg_response_struct('MSG', 'Read the README here: <https://github.com/JasonYe4273/17lands-helper>')
-    elif command_str == 'code':
-        return populate_msg_response_struct('MSG', '<https://github.com/JasonYe4273/17lands-helper>')
-    elif command_str in ['color_rank', 'colour_rank', 'rank']:
-        return populate_msg_response_struct('EMBED', embed_maker.gen_colour_rating_embed())
-
-
-### Message Parsing ###
 
 ## '"?(.*?)"? ?' finds a singular cardname, ignoring quotes and a trailing space.
 ## '(?:\| ?(.*?))?' finds the options, without the bar, if they exist.
 re_card_str = '({{"?(.*?)"? ?(?:\| ?(.*?))?}})'
 re_comp = re.compile(re_card_str)
 
-
-def parse_message(message):
-    msg = message.content
-    user = message.author
-    is_pm = str(message.channel.type) == 'private'
+def parse_card_calls(msg, user):
+    card_infos = []
     
-    if msg.startswith(COMMAND_STR):
-        print(msg)
-        return parse_command_call(msg[len(COMMAND_STR)+1:], user, is_pm)
-    else:
-        card_calls = re_comp.findall(msg)
-        msg_structs = []
+    card_calls = re_comp.findall(msg)
+    for call in card_calls:
+        print(f"Card: '{call[1]}', Options: '{call[2]}'")
+        card_info = parse_card_call(call[1], call[2], user)
+        card_infos.append(card_info)
 
-        for call in card_calls:
-            print(f"Card: '{call[1]}', Options: '{call[2]}'")
-            card_struct = parse_card_call(call[1], call[2], user)
-            print(card_struct)
+    return card_infos
 
-            # TODO: Generate embed for card based on data.
-            if card_struct['ERR'] is not None:
-                msg_structs.append(populate_msg_response_struct('MSG', card_struct['ERR']))
-            else:
-                embed = gen_card_embeds_V2(card_struct)
-                struct = populate_msg_response_struct('EMBED', embed)
-                msg_structs.append(struct)
 
-        return msg_structs
+
+
+### Command Parsing ###
+
+def gen_command_info_struct():
+    command_info = {
+        "COMMAND" : None,
+        "OPTIONS" : None
+    }
+    return command_info
+
+def parse_command_call(command_str):
+    info = gen_command_info_struct()
+    lst = command_str.split(' ')
+
+    # Remove the '17!' from the start.
+    lst.pop(0)
+
+    # Remove the command from the start, and log it.
+    info["COMMAND"] = lst.pop(0)
+
+    # Add the rest of the options.
+    info["OPTIONS"] = lst
+
+    return info
+

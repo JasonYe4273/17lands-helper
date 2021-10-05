@@ -121,8 +121,12 @@ def gen_card_info_struct():
         'cmc': None,
         'color_identity': None,
         'set' : None,
+        'formats' : None,
+        'columns' : None,
+        'colors' : None,
         'id': None,
-        'url' : None
+        'url' : None,
+        'err_msg': None
     }
 
 ##CARD_INFO = {

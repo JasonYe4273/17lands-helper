@@ -11,51 +11,6 @@ from settings  import *
 from utils import *
 
 
-RARITY_ALIASES = {
-    'common': "C",
-    'uncommon': "U",
-    'rare': "R",
-    'mythic': "M"
-}
-
-
-STAT_NAMES = {
-    ## "name",
-     "color" : "Color",
-     "rarity" : "Rarity",
-     "seen_count" : "# Seen", 
-     "avg_seen" : "ALSA", 
-     "pick_count" : "# Picked", 
-     "avg_pick" : "ATA", 
-     "game_count" : "# GP", 
-     "win_rate" : "GP WR", 
-    ## "sideboard_game_count" : "Sideboard Games", 
-    ## "sideboard_win_rate" : "SWR", 
-     "opening_hand_game_count" : "# OH", 
-     "opening_hand_win_rate" : "OH WR", 
-     "drawn_game_count" : "# GD", 
-     "drawn_win_rate" : "GD WR", 
-     "ever_drawn_game_count" : "# GIH", 
-     "ever_drawn_win_rate" : "GIH WR", 
-     "never_drawn_game_count" : "# GND", 
-     "never_drawn_win_rate" : "GND WR", 
-     "drawn_improvement_win_rate" : "IWD"
-    ## "url",
-    ## "url_back",
-}
-
-
-### Config ###
-##SETS = settings.SETS
-##FORMATS = settings.FORMATS
-##SET_CONFIG = settings.SET_CONFIG
-##DEFAULT_START_DATE = settings.DEFAULT_START_DATE
-##DATA_DIR = settings.DATA_DIR
-##CONFIG_DIR = settings.SET_CONFIG
-##CARD_DATA_FILENAME = settings.CARD_DATA_FILENAME  #'{set}_{format}.json'
-
-
-
 ### 'Objects' ###
 
 def get_set_tree():
@@ -143,17 +98,16 @@ def fetch_deck_data():
 
 def get_scryfall_data(raw_cardname):
     card_info = gen_card_info_struct()
-    ret = {'card_info': card_info, 'err_msg': None}
     
     try:
         response = requests.get(f'https://api.scryfall.com/cards/named?fuzzy={raw_cardname}').json()
         if response['object'] == 'error':
             if response['details'][:20] == 'Too many cards match':
-                ret['err_msg'] = f'Error: multiple card matches for "{raw_cardname}"'
+                card_info['err_msg'] = f'Error: Multiple card matches for "{raw_cardname}"'
             else:
-                ret['err_msg'] = f'Error: cannot find card "{raw_cardname}"'
+                card_info['err_msg'] = f'Error: Cannot find card "{raw_cardname}"'
         elif response['object'] != 'card':
-            ret['err_msg'] = f'Error: "{raw_cardname}" returned non-card'
+            card_info['err_msg'] = f'Error: "{raw_cardname}" returned non-card'
         else:
             card = response
             card_info['name'] = card['name']
@@ -176,9 +130,9 @@ def get_scryfall_data(raw_cardname):
 
     except Exception as ex:
         print(ex)
-        ret['err_msg'] = f'Error querying Scryfall for {raw_cardname}'
+        card_info['err_msg'] = f'Error querying Scryfall for {raw_cardname}'
 
-    return ret
+    return card_info
 
 
 def fetch_card_data_by_colour(s, f, c = ''):

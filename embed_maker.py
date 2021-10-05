@@ -84,12 +84,11 @@ def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, 
 
 
 # Returns an embed which displays the game stats about a particular card.
-def gen_card_embeds_V2(call_struct, start_date=None, end_date=None):   
-    card = call_struct['CARD']
-    s = call_struct['SET']
-    formats = call_struct['FORMATS']
-    color_filters = call_struct['COLORS']
-    columns = call_struct['COLUMNS']
+def gen_card_embeds_V2(card_info, start_date=None, end_date=None):   
+    s = card_info['set']
+    formats = card_info['formats']
+    color_filters = card_info['colors']
+    columns = card_info['columns']
 
     def remove(col):
         if col in columns:
@@ -97,9 +96,9 @@ def gen_card_embeds_V2(call_struct, start_date=None, end_date=None):
     remove('Color')
     remove('Rarity')
             
-    mana_cost = card['mana_cost']
-    name = card['name']
-    stored_name = card['stored_name']
+    mana_cost = card_info['mana_cost']
+    name = card_info['name']
+    stored_name = card_info['stored_name']
 
 ##    # Generate a field to show the scope of the data.
 ##    if start_date is None:
@@ -117,7 +116,7 @@ def gen_card_embeds_V2(call_struct, start_date=None, end_date=None):
     #avreage_winrate = "Avg. Overall Winrate: \t" + "%00.00" + '\r\n'
     #color_winrate = "Avg. " + emojify_color_id(card['color_identity']) + " Winrate: \t" + "%00.00" + '\r\n'
     description = "" # TODO: Add in the average winrate of 17 lands users overall and in the card colours.
-    embed = new_data_embed(title, description, url=card['url'])  
+    embed = new_data_embed(title, description, url=card_info['url'])  
 
     # Generate a list of format names and colour groupings in the order they need to be used.
     format_temp = []
