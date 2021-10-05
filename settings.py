@@ -226,11 +226,11 @@ def load_set_config():
 
     global BROADCAST_CHANNEL_IDS
     BROADCAST_CHANNEL_IDS = config_data['BROADCAST_CHANNELS']
-    print(f"'BROADCAST_CHANNEL_IDS': {BROADCAST_CHANNELS}")
+    print(f"'BROADCAST_CHANNEL_IDS': {BROADCAST_CHANNEL_IDS}")
 
     global LOGGING_CHANNEL_IDS
     LOGGING_CHANNEL_IDS = config_data['LOGGING_CHANNELS']
-    print(f"'LOGGING_CHANNEL_IDS': {LOGGING_CHANNELS}")
+    print(f"'LOGGING_CHANNEL_IDS': {LOGGING_CHANNEL_IDS}")
 
 
 def load_user_config():
@@ -246,6 +246,27 @@ def load_user_config():
 def save_user_config():
     success = save_json_file(CONFIG_DIR, "users.config", USER_CONFIG)
     return success
+
+
+def get_default_formats(username):
+    formats = []
+
+    # Get the formats the use cares about, if they exist in the config.
+    if username in USER_CONFIG:
+        for f in USER_CONFIG[username]['Formats']:
+            if USER_CONFIG[username]['Formats'][f]:
+                formats.append(f)
+    else:
+        config_struct = gen_user_config_struct()
+        config_struct['Formats'][DEFAULT_FORMAT] = True
+        USER_CONFIG[username] = config_struct
+        save_user_config()
+
+    # If no formats are in the format list, add the default one.
+    if len(formats) == 0:
+        formats.append(DEFAULT_FORMAT)
+    
+    return formats 
 
 
 load_set_config()

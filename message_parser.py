@@ -4,7 +4,7 @@ from settings import *
 from WUBRG import *
 from data_fetch import *
 from embed_maker import *
-
+from message_sender import *
 
 
 
@@ -14,31 +14,18 @@ def populate_msg_response_struct(msg_type, msg_data, use_pm=False, broadcast=Fal
     ret['CONTENT'] = msg_data
     ret['PM'] = use_pm
     ret['BROADCAST'] = broadcast
+
+
+    #ret['CHANNELS'] = []
+    #ret['MSG'] = ''
+    #ret['EMBED'] = None
+    #ret['CALLBACK']
     return ret
 
 
 ### Card Calls ###
 
-def get_default_formats(user):
-    formats = []
-    username = str(user)
 
-    # Get the formats the use cares about, if they exist in the config.
-    if username in USER_CONFIG:
-        for f in USER_CONFIG[username]['Formats']:
-            if USER_CONFIG[username]['Formats'][f]:
-                formats.append(f)
-    else:
-        config_struct = gen_user_config_struct()
-        config_struct['Formats'][DEFAULT_FORMAT] = True
-        USER_CONFIG[username] = config_struct
-        save_user_config()
-
-    # If no formats are in the format list, add the default one.
-    if len(formats) == 0:
-        formats.append(DEFAULT_FORMAT)
-    
-    return formats 
 
 
 def parse_options(opt_str):
@@ -57,7 +44,7 @@ def parse_card_call(card_name, opt_str, user):
         return call_struct
 
     call_struct['CARD'] = info['card_info']
-    call_struct['FORMATS'] = get_default_formats(user)
+    call_struct['FORMATS'] = get_default_formats(str(user))
     call_struct['SET'] = info['card_info']['set']
     if call_struct['SET'] not in SETS:
         call_struct['ERR'] = f"Data on '{info['card_info']['name']}' in set '{call_struct['SET']}' not available."
@@ -102,6 +89,7 @@ def parse_command_call(command_str, user, is_pm):
 ## '(?:\| ?(.*?))?' finds the options, without the bar, if they exist.
 re_card_str = '({{"?(.*?)"? ?(?:\| ?(.*?))?}})'
 re_comp = re.compile(re_card_str)
+
 
 def parse_message(message):
     msg = message.content
