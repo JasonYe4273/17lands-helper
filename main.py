@@ -9,7 +9,6 @@ from settings import *
 from WUBRG import *
 from embed_maker import *
 from utils import *
-from data_core import *
 
 client = discord.Client()
 
@@ -24,8 +23,6 @@ client = discord.Client()
 ##CONFIG_DIR = settings.SET_CONFIG
 ##CARD_FILENAME = settings.CARD_DATA_FILENAME  #'{set}_{format}.json'
 ##BROADCAST_CHANNELS = settings.BROADCAST_CHANNELS
-
-DATA_CACHE = None
 
 
 def get_channel(channel_info):
@@ -57,20 +54,25 @@ async def log(message):
     await send_message(LOG_CHANNEL, message)
 
 
-def update_data():
-    data_core.init_cache()
-    global DATA_CACHE
-    DATA_CACHE = data_core.DATA_CACHE
-
 
 @tasks.loop(hours=12)
 async def refresh_data():
-    update_data()
+    init_cache()
     print(f"Data cache char len: '{len(str(DATA_CACHE))}'")
 
 
 @client.event
 async def on_ready():
+    global BROADCAST_CHANNELS
+    BROADCAST_CHANNELS = list()
+    for channel_name in BROADCAST_CHANNEL_IDS:
+         BROADCAST_CHANNELS.append(get_channel(channel_info[channel_name]))
+
+    global LOGGING_CHANNELS
+    LOGGING_CHANNELS = list()
+    for channel_name in LOGGING_CHANNEL_IDS:
+         LOGGING_CHANNELS.append(get_channel(channel_info[channel_name]))
+         
     refresh_data.start()
     WUBRG.cache_manamojis(client)
     #update_data()

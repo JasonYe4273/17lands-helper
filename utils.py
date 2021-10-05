@@ -24,7 +24,7 @@ def get_card_name(card):
 
 def load_json_file(folder, filename):
     filepath = os.path.join(folder, filename)
-    print(f'Parsing {filename}...')
+    print(f'Reading {filename}...')
 
     try:
         json_str = ''

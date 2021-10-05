@@ -13,7 +13,6 @@ START_DATE = '2019-01-01'
 QUOTE_PAIRS = {'"': '"', '“': '”'}
 
 
-
 ### File Consts ###
 DATA_DIR = os.path.join(os.getcwd(), "17_lands_data")
 print(f"'DATA_DIR': {DATA_DIR}")
@@ -35,7 +34,6 @@ FORMAT_NICKNAMES = {
 }
 
 
-
 ### Card Consts ###
 RARITY_ALIASES = {
     'common': "C",
@@ -43,8 +41,6 @@ RARITY_ALIASES = {
     'rare': "R",
     'mythic': "M"
 }
-
-
 
 
 ### Stat Consts ###
@@ -61,8 +57,6 @@ DATA_COMMANDS = {
 DATA_COMMANDS['drafts'] = DATA_COMMANDS['alsa'] + DATA_COMMANDS['ata']
 DATA_COMMANDS['games'] = DATA_COMMANDS['gp'] + DATA_COMMANDS['oh'] + DATA_COMMANDS['gd'] + DATA_COMMANDS['gih'] + DATA_COMMANDS['gnd'] + DATA_COMMANDS['iwd']
 DATA_COMMANDS['data'] = DATA_COMMANDS['drafts'] + DATA_COMMANDS['games']
-
-
 
 
 STAT_NAMES = {
@@ -111,7 +105,7 @@ STAT_FORMAT_STRINGS = {
  "GIH WR" : "`{:5.2f}%`", 
  "# GND" : "`{:>6.0f}`", 
  "GND WR" : "`{:5.2f}%`", 
- "IWD" : "`{:6.2f}%`"
+ "IWD" : "`{:5.2f}%`"
 ## "url : "`{:^6}`"",
 ## "url_back : "`{:^6}`"",
 }
@@ -156,7 +150,6 @@ def gen_card_info_struct():
 ##}
 
 
-
 def gen_metadata_dict_struct():
     ret = {
         'Winrate' : None,
@@ -186,6 +179,7 @@ def gen_msg_response_struct():
     ret = {
         'TYPE' : None,  # 'MSG', 'EMBED', 'FILE'
         'CONTENT' : None,
+        'CALLBACK' : None,
         'PM' : None,
         'BROADCAST' : None
     }
@@ -201,9 +195,6 @@ def gen_user_config_struct():
         }
     }
     return ret
-
-
-
 
 
 def load_set_config():
@@ -233,10 +224,13 @@ def load_set_config():
     SET_CONFIG = config_data['SET_CONFIG']
     print(f"'SET_CONFIG': {SET_CONFIG}")
 
-    global BROADCAST_CHANNELS
-    BROADCAST_CHANNELS = config_data['BROADCAST_CHANNELS']
-    print(f"'BROADCAST_CHANNELS': {BROADCAST_CHANNELS}")
+    global BROADCAST_CHANNEL_IDS
+    BROADCAST_CHANNEL_IDS = config_data['BROADCAST_CHANNELS']
+    print(f"'BROADCAST_CHANNEL_IDS': {BROADCAST_CHANNELS}")
 
+    global LOGGING_CHANNEL_IDS
+    LOGGING_CHANNEL_IDS = config_data['LOGGING_CHANNELS']
+    print(f"'LOGGING_CHANNEL_IDS': {LOGGING_CHANNELS}")
 
 
 def load_user_config():
@@ -252,6 +246,7 @@ def load_user_config():
 def save_user_config():
     success = save_json_file(CONFIG_DIR, "users.config", USER_CONFIG)
     return success
+
 
 load_set_config()
 load_user_config()

@@ -234,13 +234,19 @@ def save_card_data(s, f):
     # Convert the aggreate dictionary into a .json file, and save it.
     card_data = fetch_card_data(s, f)
     filename = CARD_DATA_FILENAME.format(s, f)
-    save_json_file(DATA_DIR, filename, card_data)
+    return save_json_file(DATA_DIR, filename, card_data)
 
 
 def load_card_data(s, f):
     filename = CARD_DATA_FILENAME.format(s, f)
-    return load_json_file(DATA_DIR, filename)
-    print(f'Parsing {filename}...')
+    card_dict = load_json_file(DATA_DIR, filename)
+    if card_dict is not None:
+        DATA_CACHE[s][f] = card_dict
+        for c in COLOUR_GROUPS:
+            PANDAS_CACHE[s][f][c] = panadafy_dict(card_dict[c])
+        return True
+    else:
+        return False
 
 
 def update_card_data(s, f, force = False):
@@ -280,9 +286,9 @@ def update_card_data(s, f, force = False):
         # Otherwise, skip the update.
         return False
 
-
+    
     if force or allow_update(s, f):
-        save_card_data(s, f)
+        return save_card_data(s, f)
 
 
 
@@ -295,6 +301,27 @@ def fetch_meta_data():
 
 
 ### Master Functions ###
+
+def refresh_deck_level_data(force=False):
+    print(f'WARNING: refresh_deck_level_data not yet implemented.')  
+    pass
+
+
+def refresh_card_level_data(force=False):
+    updated = get_set_tree()
+    for s in SETS:
+        for f in FORMATS:
+            updated[s][f] = False
+            success = update_card_data(s, f, force)
+            if success:
+                updated[s][f] = load_card_data(s, f)
+    return updated
+
+
+def refresh_meta_level_data(force=False):
+    print(f'WARNING: refresh_meta_level_data not yet implemented.')  
+    pass
+
 
 def update_format_data(s, f, force=False):
     #fetch_deck_data()
@@ -310,14 +337,7 @@ def update_all_data(force=False):
 
 def load_format_data(s, f):
     # Load deck-level data.
-
-    # Load card-level data.
-    card_dict = load_card_data(s, f)
-    if card_dict is not None:
-        DATA_CACHE[s][f] = card_dict
-        for c in COLOUR_GROUPS:
-            PANDAS_CACHE[s][f][c] = panadafy_dict(card_dict[c])
-
+    load_card_data(s, f)
     # Load meta-level data.
 
 

@@ -42,6 +42,7 @@ def get_default_formats(user):
 
 
 def parse_options(opt_str):
+    option_keys = ['verbose', '-v', 'start=', '-s=', 'end=', '-e=', 'months=', '-m=', 'weeks=', '-w=', 'days=', '-c=', 'colors=', '-f=', 'formats=', 'set=']
 
     pass
 
