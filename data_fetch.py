@@ -37,6 +37,64 @@ WINRATES = get_set_tree()
 
 ### Helper Functions ###
 
+def query_cache(_set, _format=None, color_filter=None, cardname=None):
+    if DATA_CACHE is None:
+        return None
+    if _set not in DATA_CACHE:
+        return None
+    if _format is None:
+        return DATA_CACHE[_set]
+    
+    if DATA_CACHE[_set] is None:
+        return None
+    if _format not in DATA_CACHE[_set]:
+        return None
+    if color_filter is None:
+        return DATA_CACHE[_set][_format]
+    
+    if DATA_CACHE[_set][_format] is None:
+        return None
+    if color_filter not in DATA_CACHE[_set][_format]:
+        return None
+    if cardname is None:
+        return DATA_CACHE[_set][_format][color_filter]
+
+    if DATA_CACHE[_set][_format][color_filter] is None:
+        return None
+    if cardname not in DATA_CACHE[_set][_format][color_filter]:
+        return None
+    return DATA_CACHE[_set][_format][color_filter][cardname]
+
+
+def query_frames(_set, _format=None, color_filter=None, cardname=None):
+    if PANDAS_CACHE is None:
+        return None
+    if _set not in PANDAS_CACHE:
+        return None
+    if _format is None:
+        return PANDAS_CACHE[_set]
+    
+    if PANDAS_CACHE[_set] is None:
+        return None
+    if _format not in PANDAS_CACHE[_set]:
+        return None
+    if color_filter is None:
+        return PANDAS_CACHE[_set][_format]
+    
+    if PANDAS_CACHE[_set][_format] is None:
+        return None
+    if color_filter not in PANDAS_CACHE[_set][_format]:
+        return None
+    if cardname is None:
+        return PANDAS_CACHE[_set][_format][color_filter]
+    
+    if PANDAS_CACHE[_set][_format][color_filter] is None:
+        return None
+    if cardname not in PANDAS_CACHE[_set][_format][color_filter].index:
+        return None
+    return PANDAS_CACHE[_set][_format][color_filter].loc[cardname]
+
+
 # Make an HTTP request to a given url for json data.
 # 'tries' limits the number of attempts made to get data.
 # 'delay' sets the number of seconds before retrying on a fail.

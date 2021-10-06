@@ -23,6 +23,7 @@ print(f"'CONFIG_DIR': {CONFIG_DIR}")
 CARD_DATA_FILENAME  = 'CARD_DATA_{0}_{1}.json'
 print(f"'CARD_DATA_FILENAME': {CARD_DATA_FILENAME}")
 
+
 ### Set Consts ###
 FORMAT_NICKNAMES = {
     'PremierDraft': 'Bo1',
@@ -252,7 +253,7 @@ def save_user_config():
     return success
 
 
-def get_default_formats(username):
+def get_user_formats(username):
     formats = []
 
     # Get the formats the use cares about, if they exist in the config.
@@ -270,7 +271,33 @@ def get_default_formats(username):
     if len(formats) == 0:
         formats.append(DEFAULT_FORMAT)
     
-    return formats 
+    return formats
+
+
+def update_user_formats(username, frmt):
+    to_change = frmt
+    if frmt in FORMAT_MAPPING:
+        to_change = FORMAT_MAPPING[frmt]
+
+    config_struct = None
+
+    # Get the formats the use cares about, if they exist in the config.
+    if username in USER_CONFIG:
+        config_struct = USER_CONFIG[username]['Formats']
+    else:
+        config_struct = gen_user_config_struct()
+
+    if to_change in USER_CONFIG[username]['Formats']:
+        val = USER_CONFIG[username]['Formats'][to_change]
+        USER_CONFIG[username]['Formats'][to_change] = not val
+        USER_CONFIG[username] = config_struct
+        if save_user_config():
+            return f"{to_change} updated to '{not val}'."
+        else:
+            return f"Failed to update user conifg!"
+    else:
+        return f"No format found for value '{frmt}'."
+
 
 
 load_set_config()

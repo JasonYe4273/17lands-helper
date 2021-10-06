@@ -15,7 +15,7 @@ def parse_options(opt_str):
     pass
 
 
-def parse_card_call(card_name, opt_str, user):
+def parse_card_call(card_name, opt_str, username):
     info = get_scryfall_data(card_name)
 
     # TODO: Ravamp this to be simpler and simply return a card_info_struct
@@ -23,7 +23,7 @@ def parse_card_call(card_name, opt_str, user):
     if info['err_msg'] is not None:
         return info
 
-    info['formats'] = get_default_formats(str(user))
+    info['formats'] = get_user_formats(username)
     info['columns'] = DEFAULT_COLUMNS
 
     # Get all of the 2-colour combinations which contains the card colour.

@@ -20,7 +20,15 @@ def get_private_chat(user):
 
 async def send(channels, message="", embed=None):
     for channel in channels:
-        await channel.send(message, embed=embed)
+        if embed is not None and len(embed) > 6000:
+            await channel.send("Generated message too long! Please try something smaller.")
+        else:
+            try:
+                await channel.send(message, embed=embed)
+            except Exception as ex:
+                print(ex)
+                await channel.send("Failed to send generated message due to internal error.")
+
 
 async def send_message(channel, message, embed=None):
     await send([channel], message, embed=embed)
@@ -50,27 +58,35 @@ def gen_message_action_struct():
     return msg_action
 
 
-def command_response(command_info, channel):
+def command_response(command_info, message):
     msg_action = gen_message_action_struct()
-    msg_action["CHANNELS"] = [channel]
+    msg_action["CHANNELS"] = [message.channel]
+
+    command = command_info["COMMAND"]
+    options = command_info["OPTIONS"]
 
     
-    if command_str in ['colors', 'colours']:
+    if command in ['colors', 'colours']:
         msg_action["EMBED"] = supported_color_strings()
-    elif command_str in ['h', 'help']:
+    elif command in ['h', 'help']:
         msg_action["MSG"] = 'Read the README here: <https://github.com/JasonYe4273/17lands-helper>'
-    elif command_str == 'code':
+    elif command == 'code':
         msg_action["MSG"] = '<https://github.com/JasonYe4273/17lands-helper>'
-    elif command_str in ['color_rank', 'colour_rank', 'rank']:
+    elif command in ['color_rank', 'colour_rank', 'rank']:
         msg_action["EMBED"] = gen_colour_rating_embed()
+    elif command in ['default', 'default_format']:
+        pass
+    else:
+        # TODO: Return a list of commands, or something similar.
+        pass
 
 
     return msg_action
 
 
-def card_call_response(card_info, options, channel):
+def card_call_response(card_info, options, message):
     msg_action = gen_message_action_struct()
-    msg_action["CHANNELS"] = [channel]
+    msg_action["CHANNELS"] = [message.channel]
 
     # TODO: Generate embed for card based on data.
     if card_info['err_msg'] is not None:
@@ -85,22 +101,19 @@ def card_call_response(card_info, options, channel):
 async def send_response(message):
     msg_actions = list()
     msg = message.content
-    user = message.author
-    channel = message.channel
+    username = str(message.author)
     
     if msg.startswith(COMMAND_STR):
-        # TODO: Split string on spaces, remove first element.
-        print(msg)
         command_info = parse_command_call(msg)
         print(command_info)
-        action = parse_command_call(command_info, channel)
+        action = parse_command_call(command_info, message)
         print(action)
         msg_actions.append(action)
     else:
-        card_infos = parse_card_calls(msg, user)
+        card_infos = parse_card_calls(msg, username)
         for card_info in card_infos:
             print(card_info)
-            action = card_call_response(card_info, None, channel)
+            action = card_call_response(card_info, None, message)
             print(action)
             msg_actions.append(action)
 

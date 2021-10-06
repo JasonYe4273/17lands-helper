@@ -84,9 +84,11 @@ def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, 
 
 
 # Returns an embed which displays the game stats about a particular card.
-def gen_card_embeds_V2(card_info, start_date=None, end_date=None):   
+def gen_card_embeds_V2(card_info, start_date=None, end_date=None):
+    print(card_info)
     s = card_info['set']
-    formats = card_info['formats']
+    #formats = card_info['formats']
+    formats = ['PremierDraft', 'TradDraft', 'QuickDraft']
     color_filters = card_info['colors']
     columns = card_info['columns']
 
@@ -126,24 +128,31 @@ def gen_card_embeds_V2(card_info, start_date=None, end_date=None):
             format_temp.append(x)
             color_temp.append(y)
 
-    # Generate a column of format names
-    FORMAT_STRING = "`{:^7}`"
-    formats_column = "\r\n".join([FORMAT_STRING.format(FORMAT_NICKNAMES[f]) for f in format_temp])
-    embed.add_field(name=f"Format", value=formats_column, inline=True)
 
     # Generate a column of colour groups
-    colors_column = "\r\n".join([f'` `**NONE**' if not c else f'` `{emojify_color_id(c)}' for c in color_temp])
-    embed.add_field(name=f"` `Colors", value=colors_column, inline=True)
+    colors_column = "\r\n".join([f'`   NONE   `' if not c else f'` {c} `{emojify_color_id(c)}' for c in color_temp])
+    embed.add_field(name=f"`  Colors  `", value=colors_column, inline=True)
+
+    # Generate a column of format names
+    FORMAT_STRING = "`{:^9}`"
+    formats_column = "\r\n".join([FORMAT_STRING.format(FORMAT_NICKNAMES[f]) for f in format_temp])
+    embed.add_field(name=f"` Formats `", value=formats_column, inline=True)
+
 
     # Generate a table containing the card data
     FORMAT_STRING = "`{:^6}`"
     fields_strs = [FORMAT_STRING.format(cols) for cols in columns]
     data_strs = ""
     for x in range(0, len(format_temp)):
-        data = PANDAS_CACHE[s][format_temp[x]][color_temp[x]][columns].loc[stored_name]
-        data_strs += " ".join([STAT_FORMAT_STRINGS[columns[i]].format(data[i]) for i in range(len(data))]) + '\r\n'
-    embed.add_field(name=" ".join(fields_strs), value=data_strs, inline=True)
+        data = query_frames(s, format_temp[x], color_temp[x], stored_name)
+        if data is not None:
+            data = data[columns]
+            data_strs += " ".join([STAT_FORMAT_STRINGS[columns[i]].format(data[i]) for i in range(len(columns))]) + '\r\n'
+        else:
+            data_strs += " ".join([FORMAT_STRING.format('--') for i in range(len(columns))]) + '\r\n'
 
+        
+    embed.add_field(name=" ".join(fields_strs), value=data_strs, inline=True)
 
     return embed
 
