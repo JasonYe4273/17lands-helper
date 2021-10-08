@@ -1,16 +1,10 @@
-import discord
-import time
-from datetime import date
-
-from WUBRG import *
-from utils import *
-from settings import *
-from data_fetch import *
+from data_handling.data_fetch import *
+from global_vals.consts import *
 
 
 ### Help Embeds ###
 
-# Returns an emebed object, stylized for help calls
+# Returns an embed object, stylized for help calls
 def new_help_embed(title, description = ""):
     embed = discord.Embed(title=title, description=description, color=discord.Color.red())
     return embed
@@ -29,7 +23,7 @@ def supported_color_strings():
             color_string = get_color_string(s)
             color_id = emojify_color_id(color_string)
             
-            msg +=color_id + ' - ' + s + '\r\n'
+            msg += color_id + ' - ' + s + '\r\n'
         ret.add_field(name=d_key, value=msg, inline=True)
     return ret
 
@@ -144,9 +138,10 @@ def gen_card_embeds_V2(card_info, start_date=None, end_date=None):
     fields_strs = [FORMAT_STRING.format(cols) for cols in columns]
     data_strs = ""
     for x in range(0, len(format_temp)):
-        data = query_frames(s, format_temp[x], color_temp[x], stored_name)
+        data = cache.query_frames(s, format_temp[x], color_temp[x], stored_name)
         if data is not None:
             data = data[columns]
+            # TODO: Better handle NaNs.
             data_strs += " ".join([STAT_FORMAT_STRINGS[columns[i]].format(data[i]) for i in range(len(columns))]) + '\r\n'
         else:
             data_strs += " ".join([FORMAT_STRING.format('--') for i in range(len(columns))]) + '\r\n'
@@ -162,7 +157,7 @@ def gen_card_embeds_V2(card_info, start_date=None, end_date=None):
 def gen_colour_rating_embed():
     embed = new_data_embed(title="Colour Rankings", url="https://www.17lands.com/color_ratings")
 
-    # TODO: Modufy this so it orders the results by win rate, rather than colour identity.
+    # TODO: Modify this so it orders the results by win rate, rather than colour identity.
     
     for d_key in COLOUR_GROUPINGS:
         d = COLOUR_GROUPINGS[d_key]

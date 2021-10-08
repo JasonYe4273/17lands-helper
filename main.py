@@ -1,14 +1,7 @@
-import discord
 from discord.ext import tasks
-import os
-import requests
-import time
-from datetime import date, datetime, timedelta
 
-from settings import *
-from WUBRG import *
-from embed_maker import *
-from utils import *
+from messaging.embed_maker import *
+from global_vals.utils import *
 
 client = discord.Client()
 
@@ -142,8 +135,8 @@ async def data_query(query, channel):
         ol = o.lower()
         ou = o.upper()
         # Format
-        if ol in FORMAT_MAPPING:
-            formats.append(FORMAT_MAPPING[ol])
+        if ol in FORMAT_MAPPINGS:
+            formats.append(FORMAT_MAPPINGS[ol])
 
         # Sets
         elif ou in SETS:

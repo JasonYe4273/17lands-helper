@@ -1,35 +1,50 @@
 import numpy as np
 import pandas as pd
 
-import WUBRG
-from WUBRG import COLOUR_GROUPS, COLORS
+from global_vals.WUBRG import COLOR_GROUPS, COLORS, get_color_identity
 import data_fetch
-from settings import *
+from global_vals.structs import *
+import global_vals.settings as settings
+import data_handling.data_cache as cache
 
-PANDAS_CACHE = data_fetch.PANDAS_CACHE
 
-### Pandas Filters ###
-
-# Filters out cards that have a number of games played less than p% of # GP.
-def min_play_filter(df, p):
+# region Pandas Filters
+def min_play_filter(df: pd.DataFrame, p: float) -> pd.DataFrame:
+    """
+    Filters out cards that have a number of games played less than p% of # GP.
+    :param df: The DataFrame to filter
+    :param p: The percent of #GP to act as the threshold. (1 = 1.00%)
+    :return: Cards that meet the minimum number of games played.
+    """
     min_game = df['# GP'].sum() * (p/100)
     return df[df['# GP'] >= min_game]
 
 
-# Filters out cards that don't fall within the colour identy.
-def color_id_filter(df, color_string):
+def color_id_filter(df: pd.DataFrame, color_string: str) -> pd.DataFrame:
+    """
+    Filters out cards that don't fall within the colour identity.
+    :param df: The DataFrame to filter
+    :param color_string: The colour string to filter on
+    :return: Cards that meet the colour criteria.
+    """
     if color_string is not None and color_string != '':
         return df[df['Color'].apply(lambda x: set(x) <= set(color_string))]
     else:
         return df
 
 
-# Filters out cards that aren't in the given rarities.
-def rarity_filter(df, rarity):
+def rarity_filter(df: pd.DataFrame, rarity: str) -> pd.DataFrame:
+    """
+    Filters out cards that aren't in the given rarities.
+    :param df: The DataFrame to filter
+    :param rarity: The rarities to filter on
+    :return: Cards that match the given rarities.
+    """
     if rarity is not None and rarity != '':
         return df[df['Rarity'].apply(lambda x: set(x) <= set(rarity))]
     else:
         return df
+# endregion Pandas Filters
 
 
 # Gets the top n cards, based on a particular stat column.
@@ -39,7 +54,7 @@ def get_top(df, stat, n=5, card_colors=None, card_rarity=None, min_thresh=1, rev
     if df.empty:
         return df
 
-    if columns == None:
+    if columns is None:
         columns = list(df)
     
     filtered = color_id_filter(df, card_colors)
@@ -55,7 +70,6 @@ def get_top(df, stat, n=5, card_colors=None, card_rarity=None, min_thresh=1, rev
         filtered = filtered.nsmallest(n, stat)
     else:
         filtered = filtered.nlargest(n, stat)
-
 
     if reverse:
         filtered.columns.name = f"'Top {n} by {stat}'"
@@ -74,11 +88,11 @@ def get_top(df, stat, n=5, card_colors=None, card_rarity=None, min_thresh=1, rev
 
 # Gets a dataframe for the card, where the deck colours are the indexes.
 def get_card_frame(s, f, card_name):
-    columns = list(PANDAS_CACHE[s][f][''])
+    columns = list(cache.PANDAS_CACHE[s][f][''])
     card_df = pd.DataFrame(columns=columns)
     
-    for c in PANDAS_CACHE[s][f]:
-        df = PANDAS_CACHE[s][f][c]
+    for c in cache.PANDAS_CACHE[s][f]:
+        df = cache.PANDAS_CACHE[s][f][c]
         if c == '':
             c = 'Overall'
         data_df = None
@@ -97,7 +111,7 @@ def get_card_frame(s, f, card_name):
 
 # Returns a tuple with winrate, games won, and games played
 def color_game_counts(s, f, c, color_filter = None):
-    df = PANDAS_CACHE[s][f][c]
+    df = cache.PANDAS_CACHE[s][f][c]
     if df is None or df.empty:
         return (np.nan, np.nan, np.nan)
     
@@ -112,9 +126,9 @@ def color_game_counts(s, f, c, color_filter = None):
 # Populates WINRATES with data.
 def get_color_win_rates():
     win_rates = data_fetch.get_set_tree()
-    for s in SETS:
-        for f in FORMATS:
-            for c in COLOUR_GROUPS:
+    for s in settings.SETS:
+        for f in settings.FORMATS:
+            for c in COLOR_GROUPS:
                 win_rates[s][f][c] = color_game_counts(s,f,c)
     return win_rates
 
@@ -122,11 +136,11 @@ def get_color_win_rates():
 # Get metagame data for a given colour group.
 def get_color_group_metadata(s, f, colors, n=5, stat='GIH WR', columns=None):
     # Set up the data.
-    c = WUBRG.get_color_identity(colors)
+    c = get_color_identity(colors)
     metagame_data = gen_metadata_dict_struct()
     
     # Get the frame, and handle column filtering.
-    df = PANDAS_CACHE[s][f][c]
+    df = cache.PANDAS_CACHE[s][f][c]
     if columns == None:
         columns = list(df)
     
@@ -155,7 +169,7 @@ def get_color_overview(s, f, main_color, stat='GIH WR', columns=None):
     metagame_dict[main_color] = metagame_data
     
     # Get the frame, and handle column filtering.
-    df = PANDAS_CACHE[s][f]['']    
+    df = cache.PANDAS_CACHE[s][f]['']
     if columns == None:
         columns = list(df)
     
@@ -176,7 +190,7 @@ def get_color_overview(s, f, main_color, stat='GIH WR', columns=None):
     # Get the metagame data for all colour pairs that contain 'color'.
     color_pairs = [main_color + x for x in COLORS if x != main_color]
     for col in color_pairs:
-        c = WUBRG.get_color_identity(col)
+        c = get_color_identity(col)
         metagame_dict[c] = get_color_group_metadata(s, f, c, stat=stat, columns=columns)
         
     # TODO: Add in a fun fact here.
@@ -187,12 +201,12 @@ def get_color_overview(s, f, main_color, stat='GIH WR', columns=None):
 # Gets an overview of the metagame data and saves it to METAGAME_REPORT
 def get_format_metagame_data(s, f, stat='GIH WR', columns=None):
     if columns is None:
-        columns = DEFAULT_COLUMNS
+        columns = settings.DEFAULT_COLUMNS
     
     report = dict()
-    for s in SETS:
+    for s in settings.SETS:
         report[s] = dict()
-        for f in FORMATS:
+        for f in settings.FORMATS:
             report[s][f] = dict()
             for c in COLORS:
                 report[s][f][c] = get_color_overview(s, f, c, stat=stat, columns=columns)

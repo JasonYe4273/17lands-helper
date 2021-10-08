@@ -1,7 +1,4 @@
-import discord
-
-from settings import *
-from message_parser import *
+from messaging.message_parser import *
 
 CLIENT = discord.Client()
 BROADCAST_CHANNELS = []
@@ -46,7 +43,7 @@ async def handle_message_actions(actions):
         elif not action["MSG"] and not action["EMBED"]:
             continue # Can't send a message with no content
         else:
-           await send(action["CHANNELS"], action["MSG"], action["EMBED"])
+            await send(action["CHANNELS"], action["MSG"], action["EMBED"])
 
 
 def gen_message_action_struct():
@@ -65,7 +62,7 @@ def command_response(command_info, message):
     command = command_info["COMMAND"]
     options = command_info["OPTIONS"]
 
-    
+
     if command in ['colors', 'colours']:
         msg_action["EMBED"] = supported_color_strings()
     elif command in ['h', 'help']:
@@ -93,7 +90,7 @@ def card_call_response(card_info, options, message):
         msg_action["MSG"] = card_info['err_msg']
     else:
         msg_action["EMBED"] = gen_card_embeds_V2(card_info)
-        
+
     return msg_action
 
 
@@ -102,7 +99,7 @@ async def send_response(message):
     msg_actions = list()
     msg = message.content
     username = str(message.author)
-    
+
     if msg.startswith(COMMAND_STR):
         command_info = parse_command_call(msg)
         print(command_info)
@@ -120,18 +117,16 @@ async def send_response(message):
     await handle_message_actions(msg_actions)
 
 
-
-
 def init():
     global BROADCAST_CHANNELS
     BROADCAST_CHANNELS = list()
-    for channel_name in BROADCAST_CHANNEL_IDS:
-         BROADCAST_CHANNELS.append(get_channel(BROADCAST_CHANNEL_IDS[channel_name]))
+    for channel_name in settings.BROADCAST_CHANNEL_IDS:
+         BROADCAST_CHANNELS.append(get_channel(settings.BROADCAST_CHANNEL_IDS[channel_name]))
 
     global LOGGING_CHANNELS
     LOGGING_CHANNELS = list()
-    for channel_name in LOGGING_CHANNEL_IDS:
-         LOGGING_CHANNELS.append(get_channel(LOGGING_CHANNEL_IDS[channel_name]))
+    for channel_name in settings.LOGGING_CHANNEL_IDS:
+         LOGGING_CHANNELS.append(get_channel(settings.LOGGING_CHANNEL_IDS[channel_name]))
 
 
-         
+

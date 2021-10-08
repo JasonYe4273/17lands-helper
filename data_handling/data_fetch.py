@@ -1,105 +1,22 @@
 import os
-import json
 import requests
 from time import sleep
 from datetime import date, time, datetime, timedelta
-import numpy as np
 import pandas as pd
 
-from WUBRG import *
-from settings  import *
-from utils import *
-
-
-### 'Objects' ###
-
-def get_set_tree():
-    SET_TREE = dict()
-    for s in SETS:
-        SET_TREE[s] = dict()
-        for f in FORMATS:
-            SET_TREE[s][f] = dict()
-            for c in COLOUR_GROUPS:
-                SET_TREE[s][f][c] = None
-    return SET_TREE
-
-
-PANDAS_CACHE = get_set_tree()
-DATA_CACHE = get_set_tree()
-WINRATES = get_set_tree()
-##"CARD" : {
-##    "STAT_1" : None,
-##    "STAT_2" : None,
-##    "STAT_3" : None ...
-##    }
-
-
-
-### Helper Functions ###
-
-def query_cache(_set, _format=None, color_filter=None, cardname=None):
-    if DATA_CACHE is None:
-        return None
-    if _set not in DATA_CACHE:
-        return None
-    if _format is None:
-        return DATA_CACHE[_set]
-    
-    if DATA_CACHE[_set] is None:
-        return None
-    if _format not in DATA_CACHE[_set]:
-        return None
-    if color_filter is None:
-        return DATA_CACHE[_set][_format]
-    
-    if DATA_CACHE[_set][_format] is None:
-        return None
-    if color_filter not in DATA_CACHE[_set][_format]:
-        return None
-    if cardname is None:
-        return DATA_CACHE[_set][_format][color_filter]
-
-    if DATA_CACHE[_set][_format][color_filter] is None:
-        return None
-    if cardname not in DATA_CACHE[_set][_format][color_filter]:
-        return None
-    return DATA_CACHE[_set][_format][color_filter][cardname]
-
-
-def query_frames(_set, _format=None, color_filter=None, cardname=None):
-    if PANDAS_CACHE is None:
-        return None
-    if _set not in PANDAS_CACHE:
-        return None
-    if _format is None:
-        return PANDAS_CACHE[_set]
-    
-    if PANDAS_CACHE[_set] is None:
-        return None
-    if _format not in PANDAS_CACHE[_set]:
-        return None
-    if color_filter is None:
-        return PANDAS_CACHE[_set][_format]
-    
-    if PANDAS_CACHE[_set][_format] is None:
-        return None
-    if color_filter not in PANDAS_CACHE[_set][_format]:
-        return None
-    if cardname is None:
-        return PANDAS_CACHE[_set][_format][color_filter]
-    
-    if PANDAS_CACHE[_set][_format][color_filter] is None:
-        return None
-    if cardname not in PANDAS_CACHE[_set][_format][color_filter].index:
-        return None
-    return PANDAS_CACHE[_set][_format][color_filter].loc[cardname]
+from global_vals import settings
+from global_vals.settings import DATA_DIR, CARD_DATA_FILENAME, RARITY_ALIASES, STAT_NAMES
+from global_vals.WUBRG import *
+from global_vals.utils import *
+from global_vals.structs import *
+import data_handling.data_cache as cache
 
 
 # Make an HTTP request to a given url for json data.
 # 'tries' limits the number of attempts made to get data.
 # 'delay' sets the number of seconds before retrying on a fail.
-# On sucess returns a json object, otherwise None
-def fetch(url, tries = 5, delay = 60):
+# On success returns a json object, otherwise None
+def fetch(url, tries=5, delay=60):
     success = False
     count = 0
     
@@ -144,16 +61,15 @@ def panadafy_dict(d):
     return frame
 
 
-### Deck Level Data ###
-            
+# region Deck Level Data
 def fetch_deck_data():
     print(f'WARNING: fetch_deck_data not yet implemented.')
     pass
+# endregion Deck Level Data
 
 
-
-### Card Level Data ###
-
+# region Card Level Data
+# Query scryfall to get information on a card based on its name.
 def get_scryfall_data(raw_cardname):
     card_info = gen_card_info_struct()
     
@@ -193,13 +109,14 @@ def get_scryfall_data(raw_cardname):
     return card_info
 
 
+# Query 17 lands for data about a particular colour group for a set and format.
 def fetch_card_data_by_colour(s, f, c = ''):
     # Manage params
-    start_date = SET_CONFIG[s][f]['StartDate']
+    start_date = settings.SET_CONFIG[s][f]['StartDate']
     if start_date is None:
-        start_date = DEFAULT_START_DATE
+        start_date = settings.DEFAULT_START_DATE
         
-    end_date = SET_CONFIG[s][f]['EndDate']
+    end_date = settings.SET_CONFIG[s][f]['EndDate']
     if end_date is None:
         end_date = date.today()
     
@@ -229,12 +146,12 @@ def fetch_card_data_by_colour(s, f, c = ''):
     pass
 
 
+# Query 17 lands for all data about a particular set and format.
 def fetch_card_data(s, f, delay = 5):
-    # Automatically gets the overall data for cards, and the data for 1, 2 and 3 colour decks.
     card_data = dict()
 
     # Query 17 lands for each colour filter.
-    for c in COLOUR_GROUPS:       
+    for c in COLOR_GROUPS:
         card_data[c] = fetch_card_data_by_colour(s, f, c)
         sleep(delay)
 
@@ -242,27 +159,38 @@ def fetch_card_data(s, f, delay = 5):
     return card_data
 
 
+# Convert the dictionary of card data into a .json file, and save it.
 def save_card_data(s, f):
-    # Convert the aggreate dictionary into a .json file, and save it.
     card_data = fetch_card_data(s, f)
     filename = CARD_DATA_FILENAME.format(s, f)
     return save_json_file(DATA_DIR, filename, card_data)
 
 
-def load_card_data(s, f):
+# Load the dictionary of card data from a .json file, and parse it.
+def load_card_data(s: str, f: str) -> bool:
+    """
+    Attempts to read card data from a saved file, and load it into the cache.
+    :param s: The set name
+    :param f: The format name
+    :return: Whether the load was successful.
+    """
     filename = CARD_DATA_FILENAME.format(s, f)
     card_dict = load_json_file(DATA_DIR, filename)
     if card_dict is not None:
-        DATA_CACHE[s][f] = card_dict
-        for c in COLOUR_GROUPS:
-            PANDAS_CACHE[s][f][c] = panadafy_dict(card_dict[c])
+        cache.set_cache(card_dict, s, f)
+        for c in COLOR_GROUPS:
+            cache.set_frames(panadafy_dict(card_dict[c]), s, f, c)
         return True
     else:
         return False
 
 
+# Attempt to update card data for a set and format.
+# Will only update the data under certain conditions to reduce load on
+# the 17-lands website.
+# Can optionally force the data to update.
 def update_card_data(s, f, force = False):
-    def allow_update(s, f):
+    def allow_update():
         filepath = os.path.join(DATA_DIR, CARD_DATA_FILENAME.format(s, f))
         
         # If the data doesn't exist,
@@ -272,7 +200,8 @@ def update_card_data(s, f, force = False):
             return True
         
         # Or, if the format is live,
-        if SET_CONFIG[s][f]['Updating']:
+        # TODO: Manage set config so it's more fail-safe.
+        if settings.SET_CONFIG[s][f]['Updating']:
             utc_time = datetime.utcnow().time()
             edit_date = datetime.fromtimestamp(os.path.getmtime(filepath))
             edit_diff = datetime.now() - edit_date
@@ -288,7 +217,6 @@ def update_card_data(s, f, force = False):
                     print(f"{s} {f} is live, and new data should exist. Signaling update...")
                     return True
 
-
             # Or, if the file is over 24hrs old, update it.
             if edit_diff >= timedelta(days=1):
                 # Signal for an update.
@@ -298,10 +226,11 @@ def update_card_data(s, f, force = False):
         # Otherwise, skip the update.
         return False
 
-    
-    if force or allow_update(s, f):
+    if force or allow_update():
         return save_card_data(s, f)
-
+    else:
+        return False
+# endregion Card Level Data
 
 
 ### Metagame Level Data ###
@@ -319,13 +248,16 @@ def refresh_deck_level_data(force=False):
     pass
 
 
+# Attempts to update the card-level data for all sets and formats.
+# Can optionally force an update, but this should almost never be done.
+# TODO: Rename to update_all_card_level_data
 def refresh_card_level_data(force=False):
-    updated = get_set_tree()
-    for s in SETS:
-        for f in FORMATS:
+    updated = cache.get_set_tree_struct()
+    for s in settings.SETS:
+        for f in settings.FORMATS:
             updated[s][f] = False
             success = update_card_data(s, f, force)
-            if success:
+            if success or not cache.query_frames(s, f):
                 updated[s][f] = load_card_data(s, f)
     return updated
 
@@ -335,27 +267,33 @@ def refresh_meta_level_data(force=False):
     pass
 
 
+# Update all data surround a format from a specific set.
+# Can optionally force an update, but this should almost never be done.
 def update_format_data(s, f, force=False):
     #fetch_deck_data()
     update_card_data(s, f, force)
     #fetch_meta_data()
 
 
+# Update all data surrounding limited formats.
+# Can optionally force an update, but this should likely never be done.
 def update_all_data(force=False):
-    for s in SETS:
-        for f in FORMATS:
+    for s in settings.SETS:
+        for f in settings.FORMATS:
             update_format_data(s, f, force)
 
 
+# Loads data for a specific set and format into the cache.
 def load_format_data(s, f):
     # Load deck-level data.
     load_card_data(s, f)
     # Load meta-level data.
 
 
+# Loads all data from saved files into the cache.
 def load_all_data():
-    for s in SETS:
-        for f in FORMATS:
+    for s in settings.SETS:
+        for f in settings.FORMATS:
             load_format_data(s, f)
 
 

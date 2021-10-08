@@ -1,13 +1,14 @@
 import re
 
-from settings import *
-from WUBRG import *
-from data_fetch import *
-from embed_maker import *
+from messaging.embed_maker import *
 
 
+# region Card Call Parsing
+# TODO: Move this into message sender.
+# Parsing the card call into a card info object makes sense,
+# but for the command calls, functions will need to be called
+# meaning trying to return a function pointer and list of arguments.s
 
-### Card Call Parsing ###
 
 def parse_options(opt_str):
     option_keys = ['verbose', '-v', 'start=', '-s=', 'end=', '-e=', 'months=', '-m=', 'weeks=', '-w=', 'days=', '-c=', 'colors=', '-f=', 'formats=', 'set=']
@@ -18,13 +19,11 @@ def parse_options(opt_str):
 def parse_card_call(card_name, opt_str, username):
     info = get_scryfall_data(card_name)
 
-    # TODO: Ravamp this to be simpler and simply return a card_info_struct
-    
     if info['err_msg'] is not None:
         return info
 
-    info['formats'] = get_user_formats(username)
-    info['columns'] = DEFAULT_COLUMNS
+    info['formats'] = settings.get_user_formats(username)
+    info['columns'] = settings.DEFAULT_COLUMNS
 
     # Get all of the 2-colour combinations which contains the card colour.
     color_sets = get_color_supersets(info['color_identity'], 2)
@@ -43,7 +42,7 @@ def parse_card_call(card_name, opt_str, username):
         #info['colors'] = [''] + color_override
 
     # Validate the data
-    if info['set'] not in SETS:
+    if info['set'] not in settings.SETS:
         info['err_msg'] = f"Data on '{info['name']}' in set '{info['set']}' not available."
         return info
 
@@ -51,9 +50,9 @@ def parse_card_call(card_name, opt_str, username):
     return info
 
 
-## '"?(.*?)"? ?' finds a singular cardname, ignoring quotes and a trailing space.
-## '(?:\| ?(.*?))?' finds the options, without the bar, if they exist.
-re_card_str = '({{"?(.*?)"? ?(?:\| ?(.*?))?}})'
+# '"?(.*?)"? ?' finds a singular card name, ignoring quotes and a trailing space.
+# '(?:\| ?(.*?))?' finds the options, without the bar, if they exist.
+re_card_str = r'({{"?(.*?)"? ?(?:\| ?(.*?))?}})'
 re_comp = re.compile(re_card_str)
 
 def parse_card_calls(msg, user):
@@ -66,7 +65,7 @@ def parse_card_calls(msg, user):
         card_infos.append(card_info)
 
     return card_infos
-
+# endregion Card Call Parsing
 
 
 
