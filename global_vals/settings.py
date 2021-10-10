@@ -125,11 +125,19 @@ def get_user_formats(username) -> list[str]:
     return formats
 
 
-# TODO: Consider having this reset formats, rather than invert the provided ones.
-def update_user_formats(username, frmt):
-    to_change = frmt
-    if frmt in FORMAT_MAPPINGS:
-        to_change = FORMAT_MAPPINGS[frmt]
+def update_user_formats(username: str, formats: list[str]) -> str:
+    """
+    Update the USER_CONFIG for the user based on the formats handed in.
+    :param username: The use to change th data for
+    :param formats: The formats to change
+    :return: A string to use as a response to the user.
+    """
+
+    raise NotImplementedError("'update_user_formats' is not currently finished.")
+    # TODO: Consider having this reset formats, rather than invert the provided ones.
+    to_change = formats
+    if formats in FORMAT_MAPPINGS:
+        to_change = FORMAT_MAPPINGS[formats]
 
     # Get the formats the use cares about, if they exist in the config.
     if username in USER_CONFIG:
@@ -146,7 +154,7 @@ def update_user_formats(username, frmt):
         else:
             return f"Failed to update user config!"
     else:
-        return f"No format found for value '{frmt}'."
+        return f"No format found for value '{formats}'."
 
 
 load_defaults_config()

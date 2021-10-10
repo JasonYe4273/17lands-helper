@@ -24,6 +24,7 @@ DATA_CACHE = get_set_tree_struct()
 WIN_RATES = get_set_tree_struct()
 
 
+# region DATA_CACHE
 def query_cache(s: str, f: str = None, c: str = None, card_name: str = None) -> object:
     """
     Attempts to return a structure located in the DATA_CACHE.
@@ -100,8 +101,10 @@ def set_cache(val: object, s: str, f: str = None, c: str = None):
         DATA_CACHE[s][f] = val
     else:
         DATA_CACHE[s][f][c] = val
+# endregion DATA_CACHE
 
 
+# region PANDAS_CACHE
 def query_frames(s: str, f: str = None, c: str = None, card_name: str = None) -> object:
     """
     Attempts to return a structure located in the PANDAS_CACHE.
@@ -117,27 +120,27 @@ def query_frames(s: str, f: str = None, c: str = None, card_name: str = None) ->
     if s not in PANDAS_CACHE:
         return None
     if f is None:
-        return PANDAS_CACHE[s]
+        return PANDAS_CACHE[s]  # Returns a dict()
 
     if PANDAS_CACHE[s] is None:
         return None
     if f not in PANDAS_CACHE[s]:
         return None
     if c is None:
-        return PANDAS_CACHE[s][f]
+        return PANDAS_CACHE[s][f]  # Returns a dict()
 
     if PANDAS_CACHE[s][f] is None:
         return None
     if c not in PANDAS_CACHE[s][f]:
         return None
     if card_name is None:
-        return PANDAS_CACHE[s][f][c]
+        return PANDAS_CACHE[s][f][c]  # Returns a pd.DataFrame
 
     if PANDAS_CACHE[s][f][c] is None:
         return None
     if card_name not in PANDAS_CACHE[s][f][c].index:
         return None
-    return PANDAS_CACHE[s][f][c].loc[card_name]
+    return PANDAS_CACHE[s][f][c].loc[card_name]  # Returns a np.array
 
 
 def expand_frames(s: str, f: str = None, c: str = None):
@@ -178,3 +181,4 @@ def set_frames(val: object, s: str, f: str = None, c: str = None):
         PANDAS_CACHE[s][f] = val
     else:
         PANDAS_CACHE[s][f][c] = val
+# endregion PANDAS_CACHE
