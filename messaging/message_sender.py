@@ -4,16 +4,19 @@ CLIENT = discord.Client()
 BROADCAST_CHANNELS = []
 LOGGING_CHANNELS = []
 
+
 # returns a channel
 def get_channel(channel_info):
     guild_id = channel_info['guild_id']
     channel_id = channel_info['channel_id']
     return CLIENT.get_guild(guild_id).get_channel(channel_id)
 
+
 # returns a channel
 def get_private_chat(user):
-    #TODO: Figure out how to dm a user.
+    # TODO: Figure out how to dm a user.
     pass
+
 
 async def send(channels, message="", embed=None):
     for channel in channels:
@@ -30,27 +33,30 @@ async def send(channels, message="", embed=None):
 async def send_message(channel, message, embed=None):
     await send([channel], message, embed=embed)
 
+
 async def send_broadcast(message, embed=None):
     await send(BROADCAST_CHANNELS, message, embed=embed)
+
 
 async def log(message, embed=None):
     await send(LOGGING_CHANNELS, message, embed=embed)
 
+
 async def handle_message_actions(actions):
     for action in actions:
         if not action["CHANNELS"]:
-            continue # Can't send a message to no channels
+            continue  # Can't send a message to no channels
         elif not action["MSG"] and not action["EMBED"]:
-            continue # Can't send a message with no content
+            continue  # Can't send a message with no content
         else:
             await send(action["CHANNELS"], action["MSG"], action["EMBED"])
 
 
 def gen_message_action_struct():
     msg_action = {
-        "CHANNELS" : None,
-        "MSG" : None,
-        "EMBED" : None
+        "CHANNELS": None,
+        "MSG": None,
+        "EMBED": None
     }
     return msg_action
 
@@ -61,7 +67,6 @@ def command_response(command_info, message):
 
     command = command_info["COMMAND"]
     options = command_info["OPTIONS"]
-
 
     if command in ['colors', 'colours']:
         msg_action["EMBED"] = supported_color_strings()
@@ -77,7 +82,6 @@ def command_response(command_info, message):
         # TODO: Return a list of commands, or something similar.
         pass
 
-
     return msg_action
 
 
@@ -92,7 +96,6 @@ def card_call_response(card_info, options, message):
         msg_action["EMBED"] = gen_card_embeds_V2(card_info)
 
     return msg_action
-
 
 
 async def send_response(message):
@@ -121,12 +124,12 @@ def init():
     global BROADCAST_CHANNELS
     BROADCAST_CHANNELS = list()
     for channel_name in settings.BROADCAST_CHANNEL_IDS:
-         BROADCAST_CHANNELS.append(get_channel(settings.BROADCAST_CHANNEL_IDS[channel_name]))
+        BROADCAST_CHANNELS.append(get_channel(settings.BROADCAST_CHANNEL_IDS[channel_name]))
 
     global LOGGING_CHANNELS
     LOGGING_CHANNELS = list()
     for channel_name in settings.LOGGING_CHANNEL_IDS:
-         LOGGING_CHANNELS.append(get_channel(settings.LOGGING_CHANNEL_IDS[channel_name]))
+        LOGGING_CHANNELS.append(get_channel(settings.LOGGING_CHANNEL_IDS[channel_name]))
 
 
 

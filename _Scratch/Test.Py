@@ -11,7 +11,7 @@ from LocalToken import TOKEN
 async def refresh_data():
     load_set_config()
     load_defaults_config()
-    updated = refresh_card_level_data()
+    updated = update_all_card_level_data()
 
     update_list = []
     for s in updated:

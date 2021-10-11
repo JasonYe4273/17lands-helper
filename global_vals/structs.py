@@ -1,5 +1,5 @@
-def gen_card_info_struct():
-    return {
+def gen_card_info_struct() -> dict:
+    ret = {
         'name': None,
         'stored_name': None,
         'mana_cost': None,
@@ -13,9 +13,10 @@ def gen_card_info_struct():
         'url': None,
         'err_msg': None
     }
+    return ret
 
 
-def gen_metadata_dict_struct():
+def gen_metadata_dict_struct() -> dict:
     ret = {
         'Winrate': None,
         'Winrate Delta': None,
@@ -27,7 +28,7 @@ def gen_metadata_dict_struct():
     return ret
 
 
-def gen_card_call_struct():
+def gen_card_call_struct() -> dict:
     ret = {
         'CARD': gen_card_info_struct(),
         'SET': None,
@@ -40,7 +41,7 @@ def gen_card_call_struct():
     return ret
 
 
-def gen_msg_response_struct():
+def gen_msg_response_struct() -> dict:
     ret = {
         'TYPE': None,  # 'MSG', 'EMBED', 'FILE'
         'CONTENT': None,
@@ -51,7 +52,7 @@ def gen_msg_response_struct():
     return ret
 
 
-def gen_user_config_struct():
+def gen_user_config_struct() -> dict:
     ret = {
         "Formats": {
             "PremierDraft": False,

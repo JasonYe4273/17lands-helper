@@ -1,4 +1,3 @@
-import os
 import requests
 from time import sleep
 from datetime import date, time, datetime, timedelta
@@ -12,18 +11,20 @@ from global_vals.structs import *
 import data_handling.data_cache as cache
 
 
-# Make an HTTP request to a given url for json data.
-# 'tries' limits the number of attempts made to get data.
-# 'delay' sets the number of seconds before retrying on a fail.
-# On success returns a json object, otherwise None
-def fetch(url, tries=5, delay=60):
+def fetch(url: str, tries: int = 5, delay: int = 60) -> object:
+    """
+    Attempts to get json data from a url.
+    :param url: The url to get data from
+    :param tries: The maximum number of attempts to make
+    :param delay: The delay to wait between failed tries
+    :return: A json object or None
+    """
     success = False
     count = 0
     
     while not success:
         count += 1
-        response = None
-        
+
         try:
             response = requests.get(url)
             data = response.json()
@@ -37,20 +38,25 @@ def fetch(url, tries=5, delay=60):
                 sleep(delay)
                 continue
             else:
-                print(f'Failed to get data after 5 attempts.')
+                print(f'Failed to get data after {tries} attempts.')
                 return None
 
 
 # Converts a dict of cards stats into a a DataFrame
-def panadafy_dict(d):
-    if d is None:
+def panadafy_dict(card_dict: dict) -> pd.DataFrame:
+    """
+    Turns a dictionary into a DataFrame, with some data cleaning applied.
+    :param card_dict: The dictionary containing card data for a colour group
+    :return: A DataFrame filled with the cleaned card data
+    """
+    if card_dict is None:
         print('Warning: Dict for pandafying is null.')
     
-    frame = pd.DataFrame.from_dict(d, orient='index')
+    frame = pd.DataFrame.from_dict(card_dict, orient='index')
     frame = frame.rename(columns=STAT_NAMES)
     
     # If there's no data, make a blank frame and return it.
-    if len(d) == 0:
+    if len(card_dict) == 0:
         return frame
     
     for col in ["GP WR", "OH WR", "GD WR", "GIH WR", "GND WR", "IWD"]:
@@ -69,19 +75,30 @@ def fetch_deck_data():
 
 
 # region Card Level Data
-# Query scryfall to get information on a card based on its name.
-def get_scryfall_data(raw_cardname):
+def get_scryfall_data(raw_card_name: str) -> dict:
+    """
+    Gets card data from scryfall based on a name. Scryfall's fuzzy filter is
+    use to handle imprecise queries and spelling errors.
+    :param raw_card_name: The card name provided by a user
+    :return: A card info struct which contains card data, and an error
+    message if a problem occurred.
+    """
     card_info = gen_card_info_struct()
+    # TODO: Consider adding a way to search by sets.
     
     try:
-        response = requests.get(f'https://api.scryfall.com/cards/named?fuzzy={raw_cardname}').json()
+        response = requests.get(f'https://api.scryfall.com/cards/named?fuzzy={raw_card_name}').json()
+
+        # If the response has an error use that error to generate a description of the problem.
         if response['object'] == 'error':
             if response['details'][:20] == 'Too many cards match':
-                card_info['err_msg'] = f'Error: Multiple card matches for "{raw_cardname}"'
+                card_info['err_msg'] = f'Error: Multiple card matches for "{raw_card_name}"'
             else:
-                card_info['err_msg'] = f'Error: Cannot find card "{raw_cardname}"'
+                card_info['err_msg'] = f'Error: Cannot find card "{raw_card_name}"'
+        # If the search return a non-card, add that as the error message.
         elif response['object'] != 'card':
-            card_info['err_msg'] = f'Error: "{raw_cardname}" returned non-card'
+            card_info['err_msg'] = f'Error: "{raw_card_name}" returned non-card'
+        # Otherwise, get the relevant card info and populate the card_info_struct
         else:
             card = response
             card_info['name'] = card['name']
@@ -90,6 +107,7 @@ def get_scryfall_data(raw_cardname):
             card_info['color_identity'] = get_color_identity(''.join(card['color_identity']))
             card_info['id'] = card['id']
             card_info['url'] = card['scryfall_uri']
+            # Ignore promo sets, changing them to the standard set.
             if card['set_type'] == 'promo':
                 card_info['set'] = card['set'][1:].upper()
             else:
@@ -97,40 +115,51 @@ def get_scryfall_data(raw_cardname):
 
             if 'card_faces' in card:
                 card_info['mana_cost'] = parse_cost(card['card_faces'][0]['mana_cost'])
-                #card_info['colors'] = card['card_faces'][0]['colors'] + card['card_faces'][1]['colors']
+                # card_info['colors'] = card['card_faces'][0]['colors'] + card['card_faces'][1]['colors']
             else:
                 card_info['mana_cost'] = parse_cost(card['mana_cost'])
-                #card_info['colors'] = WUBRG.get_color_identity(''.join(card['colors']))
-
+                # card_info['colors'] = WUBRG.get_color_identity(''.join(card['colors']))
+    # If and exception occurs, print it, and add an error massage to the struct.
     except Exception as ex:
         print(ex)
-        card_info['err_msg'] = f'Error querying Scryfall for {raw_cardname}'
+        card_info['err_msg'] = f'Error querying Scryfall for {raw_card_name}'
 
     return card_info
 
 
-# Query 17 lands for data about a particular colour group for a set and format.
-def fetch_card_data_by_colour(s, f, c = ''):
+def fetch_card_data_by_colour(s: str, f: str, c: str = None, start_date: str = None, end_date: str = None) -> dict:
+    """
+    Queries 17Lands.com for data about card performance of a given set, format
+    and colour group, with optional start and end date.
+    :param s: The set name
+    :param f: The format name
+    :param c: The colour identity
+    :param start_date: The start date of the data to get
+    :param end_date: The end date of the data to get
+    :return: A dictionary of card data.
+    """
     # Manage params
-    start_date = settings.SET_CONFIG[s][f]['StartDate']
+    if start_date is None:
+        start_date = settings.SET_CONFIG[s][f]['StartDate']
     if start_date is None:
         start_date = settings.DEFAULT_START_DATE
-        
-    end_date = settings.SET_CONFIG[s][f]['EndDate']
+
+    if end_date is None:
+        end_date = settings.SET_CONFIG[s][f]['EndDate']
     if end_date is None:
         end_date = date.today()
     
     if c is None or c == '':
         c = 'No Filter'
 
-    # Generate url
+    # Generate the url
     url_base = 'https://www.17lands.com/card_ratings/data?'
     url_append = f'expansion={s}&format={f}&start_date={start_date}&end_date={end_date}'
     colour_filter = '' if c == 'No Filter' else f'&colors={c}'
     url = url_base + url_append + colour_filter
     print(f"Fetching data for {s} {f}, filter: '{c}'...")
 
-    # Fetch card-lavel data.
+    # Fetch card-level data.
     response = fetch(url)
 
     # Pump the query results into a dict, tagged with the colour filter,
@@ -146,8 +175,14 @@ def fetch_card_data_by_colour(s, f, c = ''):
     pass
 
 
-# Query 17 lands for all data about a particular set and format.
-def fetch_card_data(s, f, delay = 5):
+def fetch_card_data(s: str, f: str, delay: int = 5) -> dict:
+    """
+    Queries 17Lands.com for data about card performance across a particular set and format
+    :param s: The set name
+    :param f: The format name
+    :param delay: The delay between attempts to get data for a colour group
+    :return: A dictionary of card data.
+    """
     card_data = dict()
 
     # Query 17 lands for each colour filter.
@@ -159,14 +194,18 @@ def fetch_card_data(s, f, delay = 5):
     return card_data
 
 
-# Convert the dictionary of card data into a .json file, and save it.
-def save_card_data(s, f):
+def save_card_data(s: str, f: str) -> bool:
+    """
+    Convert the dictionary of card data into a .json file, and save it.
+    :param s: The set name
+    :param f: The format name
+    :return: Whether the file save successfully
+    """
     card_data = fetch_card_data(s, f)
     filename = CARD_DATA_FILENAME.format(s, f)
     return save_json_file(DATA_DIR, filename, card_data)
 
 
-# Load the dictionary of card data from a .json file, and parse it.
 def load_card_data(s: str, f: str) -> bool:
     """
     Attempts to read card data from a saved file, and load it into the cache.
@@ -185,12 +224,20 @@ def load_card_data(s: str, f: str) -> bool:
         return False
 
 
-# Attempt to update card data for a set and format.
-# Will only update the data under certain conditions to reduce load on
-# the 17-lands website.
-# Can optionally force the data to update.
-def update_card_data(s, f, force = False):
+def update_card_data(s, f, force=False):
+    """
+    Attempts to update the data for a particular set and format, but only if needed.
+    Can forcibly update the data.
+    :param s: The set name
+    :param f: The format name
+    :param force: Forcibly update the data
+    :return: If the data updated successfully
+    """
     def allow_update():
+        """
+        Performs various checks to determine if new data should be fetched.
+        :return: Whether the format data should be updated.
+        """
         filepath = os.path.join(DATA_DIR, CARD_DATA_FILENAME.format(s, f))
         
         # If the data doesn't exist,
@@ -233,16 +280,14 @@ def update_card_data(s, f, force = False):
 # endregion Card Level Data
 
 
-### Metagame Level Data ###
+# Metagame Level Data
 
 def fetch_meta_data():
     print(f'WARNING: fetch_meta_data not yet implemented.')    
     pass
 
 
-
-### Master Functions ###
-
+# Master Functions
 def refresh_deck_level_data(force=False):
     print(f'WARNING: refresh_deck_level_data not yet implemented.')  
     pass
@@ -250,8 +295,7 @@ def refresh_deck_level_data(force=False):
 
 # Attempts to update the card-level data for all sets and formats.
 # Can optionally force an update, but this should almost never be done.
-# TODO: Rename to update_all_card_level_data
-def refresh_card_level_data(force=False):
+def update_all_card_level_data(force=False):
     updated = cache.get_set_tree_struct()
     for s in settings.SETS:
         for f in settings.FORMATS:
@@ -297,19 +341,10 @@ def load_all_data():
             load_format_data(s, f)
 
 
-
-### File Init ###
+# File Init
 def init():
     update_all_data()
     load_all_data()
 
 
 init()
-     
-##s = SETS[0]
-##f = FORMATS[0]
-##            
-##x = fetch_card_data_by_colour(s, f)
-##update_all_data()
-##
-##x = load_card_data(s, f)

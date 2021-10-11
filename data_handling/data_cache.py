@@ -22,6 +22,7 @@ def get_set_tree_struct() -> dict:
 PANDAS_CACHE = get_set_tree_struct()
 DATA_CACHE = get_set_tree_struct()
 WIN_RATES = get_set_tree_struct()
+# TODO: Create a structure for time-based pulls.
 
 
 # region DATA_CACHE

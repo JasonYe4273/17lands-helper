@@ -11,7 +11,12 @@ from messaging.embed_maker import *
 
 
 def parse_options(opt_str):
-    option_keys = ['verbose', '-v', 'start=', '-s=', 'end=', '-e=', 'months=', '-m=', 'weeks=', '-w=', 'days=', '-c=', 'colors=', '-f=', 'formats=', 'set=']
+    option_keys = ['verbose', '-v',
+                   'start=', '-s=', 'end=', '-e=',
+                   'months=', '-m=', 'weeks=', '-w=', 'days=', '-d=',
+                   '-c=', 'colors=', 'colours=',
+                   '-f=', 'formats=',
+                   'set=']
 
     pass
 

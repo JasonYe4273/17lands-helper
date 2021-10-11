@@ -178,6 +178,7 @@ def color_game_counts(s: str, f: str, c: str, color_filter: str = None) -> tuple
 
 # Populates WINRATES with data.
 def get_color_winrates():
+    # TODO: Make this populate an object in data_cache, and use that to handle data.
     win_rates = cache.get_set_tree_struct()
     for s in settings.SETS:
         for f in settings.FORMATS:
@@ -215,7 +216,7 @@ def get_color_group_metadata(s, f, colors, n=5, stat='GIH WR', columns=None):
 
 
 # Gets a suite of data about the given colour's position in the metagame.
-def get_color_overview(s, f, main_color, stat='GIH WR', columns=None):
+def get_single_color_overview(s, f, main_color, stat='GIH WR', columns=None):
     # Set up the data.
     metagame_dict = dict()
     metagame_data = gen_metadata_dict_struct()
@@ -258,7 +259,7 @@ def get_format_metagame_data(s, f, stat='GIH WR', columns=None):
 
     report = dict()
     for c in COLORS:
-        report[c] = get_color_overview(s, f, c, stat=stat, columns=columns)
+        report[c] = get_single_color_overview(s, f, c, stat=stat, columns=columns)
     return report
 
 
@@ -273,7 +274,7 @@ def get_all_metagame_data(stat='GIH WR', columns=None):
         for f in settings.FORMATS:
             report[s][f] = dict()
             for c in COLORS:
-                report[s][f][c] = get_color_overview(s, f, c, stat=stat, columns=columns)
+                report[s][f][c] = get_single_color_overview(s, f, c, stat=stat, columns=columns)
     return report
 
 
