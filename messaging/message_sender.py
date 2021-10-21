@@ -52,7 +52,7 @@ async def handle_message_actions(actions):
             await send(action["CHANNELS"], action["MSG"], action["EMBED"])
 
 
-def gen_message_action_struct():
+def gen_message_action_struct() -> dict:
     msg_action = {
         "CHANNELS": None,
         "MSG": None,
@@ -106,7 +106,7 @@ async def send_response(message):
     if msg.startswith(COMMAND_STR):
         command_info = parse_command_call(msg)
         print(command_info)
-        action = parse_command_call(command_info, message)
+        action = command_response(command_info, message)
         print(action)
         msg_actions.append(action)
     else:

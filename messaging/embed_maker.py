@@ -3,11 +3,11 @@ from global_vals.consts import *
 
 
 ### Help Embeds ###
-
 # Returns an embed object, stylized for help calls
 def new_help_embed(title, description = ""):
     embed = discord.Embed(title=title, description=description, color=discord.Color.red())
     return embed
+
 
 # Returns an embed which lists all of the strings which can be parsed into color strings.
 def supported_color_strings():
@@ -28,10 +28,8 @@ def supported_color_strings():
     return ret
 
 
-
 ### Data Embeds ###
-
-# Returns an emebed object, stylized for data queries.
+# Returns an embed object, stylized for data queries.
 def new_data_embed(title, description = "", url = ""):
     embed = discord.Embed(title=title, description=description, color=discord.Color.blue(), url=url)
     # NOTE: Adding in a thumbnail sqiushes the formatting of the embed, which seems to have little way to control it.
@@ -39,6 +37,7 @@ def new_data_embed(title, description = "", url = ""):
     footer = "Draft data provided by 17Lands.com | Card info provided by Scryfall.com"
     embed.set_footer(text=footer)
     return embed
+
 
 # Returns an embed which displays the game stats about a particular card.
 def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, color_filter = None):
@@ -73,7 +72,6 @@ def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, 
     data_strs = "\r\n".join([" ".join([FORMAT_STRING.format(format_data(data[f][stored_name][field])) for (field, _) in fields]) for f in formats])
     embed.add_field(name=" ".join(fields_strs), value=data_strs, inline=True)
 
-
     return embed
 
 
@@ -105,7 +103,6 @@ def gen_card_embeds_V2(card_info, start_date=None, end_date=None):
 ##        end_date = default if default is not None else date.today()
 ##    date_range = f"Date Range:\t\t {start_date} to {end_date}"  + '\r\n'
 
-
     # TODO: fetch color winrate from 17lands
         
     title = name + " " + emojify_mana_cost(mana_cost)
@@ -122,7 +119,6 @@ def gen_card_embeds_V2(card_info, start_date=None, end_date=None):
             format_temp.append(x)
             color_temp.append(y)
 
-
     # Generate a column of colour groups
     colors_column = "\r\n".join([f'`   NONE   `' if not c else f'` {c} `{emojify_color_id(c)}' for c in color_temp])
     embed.add_field(name=f"`  Colors  `", value=colors_column, inline=True)
@@ -132,13 +128,12 @@ def gen_card_embeds_V2(card_info, start_date=None, end_date=None):
     formats_column = "\r\n".join([FORMAT_STRING.format(FORMAT_NICKNAMES[f]) for f in format_temp])
     embed.add_field(name=f"` Formats `", value=formats_column, inline=True)
 
-
     # Generate a table containing the card data
     FORMAT_STRING = "`{:^6}`"
     fields_strs = [FORMAT_STRING.format(cols) for cols in columns]
     data_strs = ""
     for x in range(0, len(format_temp)):
-        data = cache.query_frames(s, format_temp[x], color_temp[x], stored_name)
+        data = cache.query_frames_cache(s, format_temp[x], color_temp[x], stored_name)
         if data is not None:
             data = data[columns]
             # TODO: Better handle NaNs.
@@ -146,7 +141,6 @@ def gen_card_embeds_V2(card_info, start_date=None, end_date=None):
         else:
             data_strs += " ".join([FORMAT_STRING.format('--') for i in range(len(columns))]) + '\r\n'
 
-        
     embed.add_field(name=" ".join(fields_strs), value=data_strs, inline=True)
 
     return embed
@@ -167,7 +161,7 @@ def gen_colour_rating_embed():
             color_id = emojify_color_id(color_string)
 
             # TODO: Populate with real data.
-            msg +=  color_id + ': ' + "`% 00.00`" + '\r\n'
+            msg += color_id + ': ' + "`% 00.00`" + '\r\n'
         embed.add_field(name=d_key, value=msg, inline=True)
 
     return embed

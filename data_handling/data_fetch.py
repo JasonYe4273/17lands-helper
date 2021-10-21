@@ -42,7 +42,16 @@ def fetch(url: str, tries: int = 5, delay: int = 60) -> object:
                 return None
 
 
-# Converts a dict of cards stats into a a DataFrame
+def get_scryfall_set_card_list(set_name: str) -> dict:
+    # TODO: Get the list of cards in a set from scryfall
+    pass
+
+
+def update_card_list_cache(set_name: str) -> dict:
+    # TODO: Populate the CARD_LIST_CACHE with set card lists.
+    pass
+
+
 def panadafy_dict(card_dict: dict) -> pd.DataFrame:
     """
     Turns a dictionary into a DataFrame, with some data cleaning applied.
@@ -75,17 +84,16 @@ def fetch_deck_data():
 
 
 # region Card Level Data
-def get_scryfall_data(raw_card_name: str) -> dict:
+def get_scryfall_card_data(raw_card_name: str) -> dict:
     """
     Gets card data from scryfall based on a name. Scryfall's fuzzy filter is
-    use to handle imprecise queries and spelling errors.
+    used to handle imprecise queries and spelling errors.
     :param raw_card_name: The card name provided by a user
     :return: A card info struct which contains card data, and an error
     message if a problem occurred.
     """
     card_info = gen_card_info_struct()
-    # TODO: Consider adding a way to search by sets.
-    
+
     try:
         response = requests.get(f'https://api.scryfall.com/cards/named?fuzzy={raw_card_name}').json()
 
@@ -112,6 +120,9 @@ def get_scryfall_data(raw_card_name: str) -> dict:
                 card_info['set'] = card['set'][1:].upper()
             else:
                 card_info['set'] = card['set'].upper()
+
+            # TODO: Determine the set from the CARD_LIST_CACHE
+            # card_info['set'] = query_card_list_cache(card['name'])
 
             if 'card_faces' in card:
                 card_info['mana_cost'] = parse_cost(card['card_faces'][0]['mana_cost'])
@@ -216,9 +227,9 @@ def load_card_data(s: str, f: str) -> bool:
     filename = CARD_DATA_FILENAME.format(s, f)
     card_dict = load_json_file(DATA_DIR, filename)
     if card_dict is not None:
-        cache.set_cache(card_dict, s, f)
+        cache.set_dict_cache_value(card_dict, s, f)
         for c in COLOR_GROUPS:
-            cache.set_frames(panadafy_dict(card_dict[c]), s, f, c)
+            cache.set_frames_cache_value(panadafy_dict(card_dict[c]), s, f, c)
         return True
     else:
         return False
@@ -301,7 +312,7 @@ def update_all_card_level_data(force=False):
         for f in settings.FORMATS:
             updated[s][f] = False
             success = update_card_data(s, f, force)
-            if success or not cache.query_frames(s, f):
+            if success or not cache.query_frames_cache(s, f):
                 updated[s][f] = load_card_data(s, f)
     return updated
 

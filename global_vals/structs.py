@@ -16,6 +16,18 @@ def gen_card_info_struct() -> dict:
     return ret
 
 
+def gen_options_call_struct() -> dict:
+    ret = {
+        "start": None,
+        "end": None,
+        "colors": [],
+        "formats": [],
+        "set": None,
+        "verbose": False
+    }
+    return ret
+
+
 def gen_metadata_dict_struct() -> dict:
     ret = {
         'Winrate': None,
@@ -24,30 +36,6 @@ def gen_metadata_dict_struct() -> dict:
         'Metagame Share': None,
         'Top Commons': None,
         'Top Uncommons': None
-    }
-    return ret
-
-
-def gen_card_call_struct() -> dict:
-    ret = {
-        'CARD': gen_card_info_struct(),
-        'SET': None,
-        'FORMATS': None,
-        'COLORS': None,
-        'COLUMNS': None,
-        'ERR': None,
-        'EXTRA': None
-    }
-    return ret
-
-
-def gen_msg_response_struct() -> dict:
-    ret = {
-        'TYPE': None,  # 'MSG', 'EMBED', 'FILE'
-        'CONTENT': None,
-        'CALLBACK': None,
-        'PM': None,
-        'BROADCAST': None
     }
     return ret
 

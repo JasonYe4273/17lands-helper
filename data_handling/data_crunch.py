@@ -147,7 +147,7 @@ def color_game_counts(s: str, f: str, c: str, color_filter: str = None) -> tuple
     :return: tuple with winrate, games won, and games played
     """
     # Get the DataFrame from the cache, and make sure it is valid.
-    df = cache.query_frames(s, f, c)
+    df = cache.query_frames_cache(s, f, c)
     if not isinstance(df, pd.DataFrame):
         print("WARNING: DataFrame not found.")
         df = pd.DataFrame()
