@@ -9,7 +9,7 @@ from WUBRG import MAIN_COLOUR_GROUPS
 # TODO: Make this a json object which is routinely checked.
 # This will enable format updates without having to completely recompile the bot.
 SET_CONFIG = {
-    "MID" : {
+    "VOW" : {
         "PremierDraft": {
             "Updating" : True,
             "StartDate" : "yyyy-mm-dd",
@@ -17,6 +17,38 @@ SET_CONFIG = {
         },
         "TradDraft": {
             "Updating" : True,
+            "StartDate" : "yyyy-mm-dd",
+            "EndDate" : "yyyy-mm-dd"
+        },
+        "QuickDraft": {
+            "Updating" : True,
+            "StartDate" : "yyyy-mm-dd",
+            "EndDate" : "yyyy-mm-dd"
+        },
+        "Sealed": {
+            "Updating" : True,
+            "StartDate" : "yyyy-mm-dd",
+            "EndDate" : "yyyy-mm-dd"
+        },
+        "TradSealed": {
+            "Updating" : True,
+            "StartDate" : "yyyy-mm-dd",
+            "EndDate" : "yyyy-mm-dd"
+        },
+        "DraftChallenge": {
+            "Updating" : False,
+            "StartDate" : "yyyy-mm-dd",
+            "EndDate" : "yyyy-mm-dd"
+        }
+    },
+    "MID" : {
+        "PremierDraft": {
+            "Updating" : False,
+            "StartDate" : "yyyy-mm-dd",
+            "EndDate" : "yyyy-mm-dd"
+        },
+        "TradDraft": {
+            "Updating" : False,
             "StartDate" : "yyyy-mm-dd",
             "EndDate" : "yyyy-mm-dd"
         },

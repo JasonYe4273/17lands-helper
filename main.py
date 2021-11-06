@@ -13,8 +13,8 @@ from set_info import DATA_CACHE, init_cache, fetch_format_data
 
 client = discord.Client()
 
-UPDATING_SETS = ['MID']
-OLD_SETS = ['AFR', 'STX', 'KHM']
+UPDATING_SETS = ['VOW']
+OLD_SETS = ['MID', 'AFR', 'STX', 'KHM']
 SETS = UPDATING_SETS + OLD_SETS
 
 FORMATS = {
