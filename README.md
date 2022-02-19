@@ -2,7 +2,7 @@
 Discord bot for scraping 17lands data
 
 ## Status
-The bot is currently hosted on heroku, so should be up continuously! It is currently still in development, so it may be rough around the edges, and occasionally break as I update it, but it is definitely usable!
+The bot is currently hosted on heroku, so should be up continuously! I am not currently actively developing it, though I may add some more features in the future. Feel free to make a PR if you have an improvement/idea!
 
 ## How to invite
 Go to [this link](https://discord.com/api/oauth2/authorize?client_id=890628197664817203&permissions=380104920128&scope=bot) to invite the bot to your server.
