@@ -10,7 +10,7 @@ Go to [this link](https://discord.com/api/oauth2/authorize?client_id=89062819766
 ## How to use
 
 The bot currently responds to the following commands:
-- `!colors` will list valid strings for specifying color combinations (relevant for data query options)
+- `17!colors` will list valid strings for specifying color combinations (relevant for data query options)
 - Data queries:
     - The bot will respond to messages that include substring(s) like `{{[cardnames] | [options]}}`. Everything is case-insensitive.
     - `[cardnames]` is a list of names of cards you want to query data for, separated by spaces. This uses Scryfall's fuzzy match to find the card, so slight misspellings and incomplete names are often okay. A name with spaces must be enclosed by quotes, otherwise it will be interpreted as multiple names. For example: `{{jadar "gisa resurrector"}}` will query for the cards Jadar, Ghoulcaller of Nephalia and Gisa, Glorious Resurrector.
