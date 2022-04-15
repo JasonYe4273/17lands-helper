@@ -1,21 +1,19 @@
 import discord
 import WUBRG
 from WUBRG import COLOR_ALIASES_SUPPORT, COLOUR_GROUPINGS
+from settings import FORMAT_NICKNAMES
 from utils import format_data, get_card_name
-
-FORMAT_NICKNAMES = {
-    'PremierDraft': 'Bo1',
-    'TradDraft': 'Bo3',
-    'QuickDraft': 'Quick',
-    'Sealed': 'Seal',
-    'TradSealed': 'Bo3Seal',
-    'DraftChallenge': 'Chal.',
-}
 
 
 # - Data Embeds
-# Returns an embed object, stylized for data queries.
-def new_data_embed(title, description="", url=""):
+def new_data_embed(title: str, description: str = "", url: str = "") -> discord.Embed:
+    """
+    Creates and returns a shell of an embed used as a response for data-related calls.
+    :param title: The title of the embed.
+    :param description: A description
+    :param url: A url to send the user to on-click.
+    :return: A pre-formatted embed.
+    """
     embed = discord.Embed(title=title, description=description, color=discord.Color.blue(), url=url)
     # NOTE: Adding in a thumbnail squishes the formatting of the embed, which seems to have little way to control it.
     # embed.set_thumbnail(url="https://c1.scryfall.com/file/scryfall-cards/normal/front/b/6/b615facd-6276-4896-bdf6-e5c006f55c5f.jpg?1632163002")
@@ -24,8 +22,20 @@ def new_data_embed(title, description="", url=""):
     return embed
 
 
-# Returns an embed which displays the game stats about a particular card.
-def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, color_filter=None):
+def gen_card_embed(card: dict, set_code: str, data: dict, formats: list[str], fields: list[tuple[str, str]],
+                   start_date: str, end_date: str, color_filter: str = None) -> discord.Embed:
+    """
+    Returns an embed which displays the game stats about a particular card.
+    :param card: The json of the card.
+    :param set_code: The three-letter set code.
+    :param data: The dictionary of data to pull from.
+    :param formats: The list of formats to display data from.
+    :param fields: The list of fields to show data for.
+    :param start_date: The start dat of the data.
+    :param end_date: The end date of the data.
+    :param color_filter: The colors to filter on.
+    :return:
+    """
     if 'mana_cost' in card:
         mana_cost = card['mana_cost']
     elif 'card_faces' in card:
@@ -65,9 +75,11 @@ def gen_card_embed(card, set_code, data, formats, fields, start_date, end_date, 
     return embed
 
 
-# Returns an embed which shows the win rates different colours of decks.
-# NOTE: Unfinished. Needs to be populated with real data.
-def gen_colour_rating_embed():
+def gen_colour_rating_embed() -> discord.Embed:
+    """
+    Returns an embed which shows the win rates different colours of decks.
+    :return: An embed with the archetype data.
+    """
     embed = new_data_embed(title="Colour Rankings", url="https://www.17lands.com/color_ratings")
 
     for d_key in COLOUR_GROUPINGS:
@@ -86,13 +98,22 @@ def gen_colour_rating_embed():
 
 # - Help Embeds
 # Returns an embed object, stylized for help calls
-def new_help_embed(title, description=""):
+def new_help_embed(title: str, description: str = "") -> discord.Embed:
+    """
+    Creates and returns a shell of an embed used as a response for help-related calls.
+    :param title: The title of the embed.
+    :param description: A description
+    :return: A pre-formatted embed.
+    """
     embed = discord.Embed(title=title, description=description, color=discord.Color.red())
     return embed
 
 
 # Returns an embed which lists all of the strings which can be parsed into color strings.
-def supported_color_strings():
+def supported_color_strings() -> discord.Embed:
+    """
+    Generates a discord embed which outlines the colour aliases that are available to the user.
+    """
     ret = new_help_embed(
         title="Available Colour Strings",
         description="Accepted colours are a mix of 'W', 'U', 'B', 'R', 'G', and 'C', or the keywords below.",

@@ -7,7 +7,7 @@ from WUBRG import MAIN_COLOUR_GROUPS
 
 # TODO: Make this a json object which is routinely checked.
 # This will enable format updates without having to completely recompile the bot.
-SET_CONFIG = {
+SET_CONFIG: dict[str, dict[str, dict]] = {
     "VOW": {
         "PremierDraft": {
             "Updating": True,
@@ -108,18 +108,18 @@ SET_CONFIG = {
     }
 }
 
-SETS = ['MID', 'AFR']
-FORMATS = ['PremierDraft', 'TradDraft', 'QuickDraft', 'Sealed', 'TradSealed', 'DraftChallenge']
-SET_TREE = dict()
+SETS: list[str] = ['MID', 'AFR']
+FORMATS: list[str] = ['PremierDraft', 'TradDraft', 'QuickDraft', 'Sealed', 'TradSealed', 'DraftChallenge']
+SET_TREE: dict = dict()
 for s in SETS:
     SET_TREE[s] = dict()
     for f in FORMATS:
         SET_TREE[s][f] = None
 
-START_DATE = '2021-01-01'
-DATA_DIR = os.path.join(os.getcwd(), "17_lands_data")
-FILENAME = '{0}_{1}.json'  # '{set}_{format}.json'
-STAT_NAMES = [
+START_DATE: str = '2021-01-01'
+DATA_DIR: str = os.path.join(os.getcwd(), "17_lands_data")
+FILENAME: str = '{0}_{1}.json'  # '{set}_{format}.json'
+STAT_NAMES: list[str] = [
     "seen_count",
     "avg_seen",
     "pick_count",
@@ -138,7 +138,7 @@ STAT_NAMES = [
     "never_drawn_win_rate",
     "drawn_improvement_win_rate"]
 
-DATA_CACHE = dict()
+DATA_CACHE: dict = dict()
 
 
 def fetch_bot_data():
@@ -148,7 +148,7 @@ def fetch_bot_data():
 
 # - JSON Management
 # Reads the json file for a given set and returns a dict which represent the cards.
-def read_set_data(set_name, format_name):
+def read_set_data(set_name: str, format_name: str) -> dict:
     format_dict = {c: dict() for c in MAIN_COLOUR_GROUPS}
     filename = FILENAME.format(set_name, format_name)
     filepath = os.path.join(DATA_DIR, filename)
@@ -167,7 +167,7 @@ def read_set_data(set_name, format_name):
 
 
 # Automatically gets the overall data for cards, and the data for 1, 2 and 3 colour decks.
-def save_set_data(set_name, format_name):
+def save_set_data(set_name: str, format_name: str):
     json_out = dict()
     filename = FILENAME.format(set_name, format_name)
 
@@ -191,7 +191,7 @@ def save_set_data(set_name, format_name):
 
 # - 17 Lands Querying
 # Returns true is the data for a set format should be updated.
-def to_update(set_name, format_name):
+def to_update(set_name: str, format_name: str):
     # If the format is live,
     if SET_CONFIG[set_name][format_name]['Updating']:
         time_range_start = time(0, 55)
@@ -230,7 +230,7 @@ def to_update(set_name, format_name):
 
 
 # Fetches all the data for a given set and format, using an optional colour filter.
-def fetch_format_data(set_name, format_name, c='None', start_date=None, end_date=None):
+def fetch_format_data(set_name: str, format_name: str, c: str = 'None', start_date: str = None, end_date: str = None):
     success = False
     count = 0
 
@@ -308,7 +308,7 @@ def blank_cache():
 
 
 # Updates the cards data cache with data from the .json files.
-def update_cache(update_dict):
+def update_cache(update_dict: dict):
     print(f'Checking for cache updates...')
 
     global DATA_CACHE
