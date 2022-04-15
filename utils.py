@@ -6,6 +6,7 @@ def format_data(data):
     else:
         return "{:.2f}".format(data)
 
+
 # Get 17lands-compatible card name given Scryfall card object
 def get_card_name(card):
     name = card['name']

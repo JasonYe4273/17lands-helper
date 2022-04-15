@@ -1,87 +1,85 @@
-import discord
-
 # Used to populate the emojis which represent mana costs and set symbols.
 # Note, not calling this means no emojis will be found, and embeds will be emojiless.
 MANAMOJIS = []
 SETMOJIS = []
+
+
 def cache_manamojis(client):
     global MANAMOJIS
     MANAMOJIS = [emo for emo in client.emojis if emo.name.startswith('mana')]
     print(f'{len(MANAMOJIS)} manamojis found!')
-    
-    # TODO: Add in support for set symbols.
-    #global SETMOJIS
-    #SETMOJIS = [emo for emo in client.emojis if emo.name.startswith('set')]
-    #print(f'{len(SETMOJIS)} setmojis found!')
 
-### Colour Mapping ###
-    
+    # TODO: Add in support for set symbols.
+    # global SETMOJIS
+    # SETMOJIS = [emo for emo in client.emojis if emo.name.startswith('set')]
+    # print(f'{len(SETMOJIS)} setmojis found!')
+
+
+# - Colour Mapping ###
 # Groupings of colour-sets supported.
 COLOR_ALIASES_SUPPORT = {
     'Colors': {
-        'White' : "W",
-         'Blue' : "U",
-         'Black' : "B",
-         'Red' : "R",
-         'Green' : "G"
+        'White': "W",
+        'Blue': "U",
+        'Black': "B",
+        'Red': "R",
+        'Green': "G"
     },
-    'Guilds' : {
-        'Azorius' : "WU", 
-         'Orzhov' : "WB", 
-         'Boros' : "WR",
-         'Selesnya' : "WG",
-         'Dimir' : "UB",
-         'Izzet' : "UR",
-         'Simic' : "UG",
-         'Rakdos' : "BR",
-         'Golgari' : "BG",
-         'Gruul' : "RG"
+    'Guilds': {
+        'Azorius': "WU",
+        'Orzhov': "WB",
+        'Boros': "WR",
+        'Selesnya': "WG",
+        'Dimir': "UB",
+        'Izzet': "UR",
+        'Simic': "UG",
+        'Rakdos': "BR",
+        'Golgari': "BG",
+        'Gruul': "RG"
     },
-    'Colleges' : {
-        'Silverquill' : "WB", 
-         'Lorehold' : "WR",
-         'Prismari' : "UR",
-         'Quandrix' : "UG",
-         'Witherbloom' : "BG"
+    'Colleges': {
+        'Silverquill': "WB",
+        'Lorehold': "WR",
+        'Prismari': "UR",
+        'Quandrix': "UG",
+        'Witherbloom': "BG"
     },
-    'Wedges' : {
-        'Jeksai' : "WUR",
-         'Mardu' : "WBR",
-         'Abzan' : "WBG",
-         'Sultai' : "UBG",
-         'Temur' : "URG"
+    'Wedges': {
+        'Jeskai': "WUR",
+        'Mardu': "WBR",
+        'Abzan': "WBG",
+        'Sultai': "UBG",
+        'Temur': "URG"
     },
-    'Triomes' : {
-        'Raugrin' : "WUR",
-         'Savai' : "WBR",
-         'Indatha' : "WBG",
-         'Zagoth' : "UBG",
-         'Ketria' : "URG"
+    'Triomes': {
+        'Raugrin': "WUR",
+        'Savai': "WBR",
+        'Indatha': "WBG",
+        'Zagoth': "UBG",
+        'Ketria': "URG"
     },
-    'Shards' : {
-        'Esper' : "WUB",
-         'Bant' : "WUG",
-         'Naya' : "WRG",
-         'Grixis' : "UBR",
-         'Jund' : "BRG"
+    'Shards': {
+        'Esper': "WUB",
+        'Bant': "WUG",
+        'Naya': "WRG",
+        'Grixis': "UBR",
+        'Jund': "BRG"
     }
 }
 
-
 # Merging all of the supported colour-sets.
-COLOR_ALIASES = {'5-Color' : "WUBRG", 'All' : "WUBRGC", 'None' : "None"}
+COLOR_ALIASES = {'5-Color': "WUBRG", 'All': "WUBRGC", 'None': "None"}
 for d in COLOR_ALIASES_SUPPORT:
     COLOR_ALIASES = COLOR_ALIASES | COLOR_ALIASES_SUPPORT[d]
 
-
-# Lists of alais based on the number of colours.
+# Lists of alias based on the number of colours.
 COLOUR_GROUPINGS = {
     'Mono-Color': ['White', 'Blue', 'Black', 'Red', 'Green'],
     'Two-Color': ['Azorius', 'Orzhov', 'Boros', 'Selesnya', 'Dimir', 'Izzet', 'Simic', 'Rakdos', 'Golgari', 'Gruul'],
-    'Three-Color': ['Jeksai', 'Mardu', 'Abzan', 'Sultai', 'Temur', 'Esper', 'Bant', 'Naya', 'Grixis', 'Jund']
+    'Three-Color': ['Jeskai', 'Mardu', 'Abzan', 'Sultai', 'Temur', 'Esper', 'Bant', 'Naya', 'Grixis', 'Jund']
 }
 
-MAIN_COLOUR_GROUPS = [''] # Filled below
+MAIN_COLOUR_GROUPS = ['']  # Filled below
 
 
 # Takes in a string, and attempts to convert it to a color_string.
@@ -97,16 +95,11 @@ def get_color_string(s):
     char_set = set(s)
     remainder = char_set - valid_chars
 
-    if (len(remainder) > 0):
-        print(f'Invalid color string provded: {s}. Converting to "WUBRGC"')
+    if len(remainder) > 0:
+        print(f'Invalid color string provided: {s}. Converting to "WUBRGC"')
         s = "WUBRGC"
-    
+
     return s
-
-
-
-MAIN_COLOUR_GROUPS = ['None'] + [get_color_string(y) for x in COLOUR_GROUPINGS for y in COLOUR_GROUPINGS[x]]
-
 
 
 # Takes in a valid colour string, or colour string alias,
@@ -126,24 +119,23 @@ def get_color_map(color_str):
     return colors_exist
 
 
-
-### Emojis ###
+# - Emojis
 # To automatically grab server emojis installed from
 # https://github.com/scryfall/manamoji-discord/tree/main/emojis
 def get_emoji(emoji_str):
     # Format and convert the emoji trying to be found.
     # EG: 'W' gets converted to 'w', and then 'manaw'.
     emoji_str = emoji_str.lower()
-    
+
     manamoji_str = emoji_str
     if not manamoji_str.startswith('mana'):
         manamoji_str = 'mana' + manamoji_str
 
     setmoji_str = emoji_str
     if not setmoji_str.startswith('set'):
-        setmoji_str = 'set' + setmoji_str
-        
-    
+        # setmoji_str = 'set' + setmoji_str
+        pass
+
     manamojis = [emo for emo in MANAMOJIS if emo.name == manamoji_str]
 
     if len(manamojis) > 0:
@@ -151,7 +143,8 @@ def get_emoji(emoji_str):
     else:
         return ""
 
-# NOTE: Imcomplete
+
+# NOTE: Incomplete
 # Parses a string mana cost into a list of mana 'elements', while converting
 # from 'curly-brace' format or plain-text format to our list format.
 # Eg. {10}{G}{G} would return ['10', 'G', 'G']
@@ -160,6 +153,7 @@ def parse_cost(mana_cost):
     # TODO: Parse the mana cost from the {1}{W}{B} format into a list of strings.
     return [char for char in mana_cost]
     pass
+
 
 # Takes a mana cost and attempts to return a string of emojis which
 # represent that mana cost, as it would look on the card.
@@ -171,6 +165,7 @@ def emojify_mana_cost(mana_cost):
     for sym in mana_cost:
         cost += get_emoji(sym)
     return cost
+
 
 # Takes a mana cost and attempts to return a string of emojis which
 # represent that teh colours contained in that card.

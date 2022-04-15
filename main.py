@@ -6,10 +6,9 @@ from datetime import date, datetime, timedelta
 from discord.ext import tasks
 from settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE, DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID, QUOTE_PAIRS
 import WUBRG
-from WUBRG import COLOR_ALIASES_SUPPORT, COLOR_ALIASES, COLOUR_GROUPINGS, MANAMOJIS
+from WUBRG import COLOR_ALIASES
 from embed_maker import gen_card_embed, supported_color_strings
-from utils import format_data, get_card_name
-from set_info import DATA_CACHE, init_cache, fetch_format_data
+from utils import get_card_name
 
 client = discord.Client()
 
@@ -43,25 +42,28 @@ DATA_COMMANDS = {
     'iwd': [('drawn_improvement_win_rate', 'IWD', False)]
 }
 DATA_COMMANDS['drafts'] = DATA_COMMANDS['alsa'] + DATA_COMMANDS['ata']
-DATA_COMMANDS['games'] = DATA_COMMANDS['gp'] + DATA_COMMANDS['oh'] + DATA_COMMANDS['gd'] + DATA_COMMANDS['gih'] + DATA_COMMANDS['gnd'] + DATA_COMMANDS['iwd']
+DATA_COMMANDS['games'] = DATA_COMMANDS['gp'] + DATA_COMMANDS['oh'] + DATA_COMMANDS['gd'] + DATA_COMMANDS['gih'] + \
+                         DATA_COMMANDS['gnd'] + DATA_COMMANDS['iwd']
 DATA_COMMANDS['data'] = DATA_COMMANDS['drafts'] + DATA_COMMANDS['games']
-
 
 
 async def send_embed_message(channel, embed):
     print(f"Sending embedded message to channel '#{channel}'")
     await channel.send(embed=embed)
 
+
 async def send_message(channel, message):
     print(f'Sending message to channel {channel}: {message}')
     await channel.send(message)
 
+
 @client.event
 async def on_ready():
     WUBRG.cache_manamojis(client)
-    #init_cache()
+    # init_cache()
     fetch_data(OLD_SETS)
     print('Logged in as {0.user}'.format(client))
+
 
 def parse_colors(colors_str):
     if colors_str == 'all':
@@ -82,13 +84,14 @@ def parse_colors(colors_str):
             colors += c
     return colors
 
+
 async def data_query(query, channel):
     print(f'Handling data query {query}')
     separator = query.find(DATA_QUERY_MID)
     card_query = query.strip() if separator == -1 else query[:separator].strip()
-    options_query = '' if separator == -1 else query[separator+1:].strip()
+    options_query = '' if separator == -1 else query[separator + 1:].strip()
 
-    # Parse cardnames to the left of separator
+    # Parse card names to the left of separator
     scryfall_cards = []
     rest = card_query
     old_rest = None
@@ -102,7 +105,7 @@ async def data_query(query, channel):
         if rest[0] in QUOTE_PAIRS and rest.find(QUOTE_PAIRS[rest[0]], 1) != -1:
             end = rest.find(QUOTE_PAIRS[rest[0]], 1)
             raw_cardname = rest[1:end]
-            rest = rest[end+1:].strip()
+            rest = rest[end + 1:].strip()
         else:
             end = rest.find(' ')
             if end == -1:
@@ -160,29 +163,29 @@ async def data_query(query, channel):
         # Time period to search
         elif end_date is None and (ol.startswith('end=') or ol.startswith('-e=')):
             try:
-                end_date = datetime.strptime(ol[ol.find('=')+1:], '%m-%d-%Y').date()
+                end_date = datetime.strptime(ol[ol.find('=') + 1:], '%m-%d-%Y').date()
             except:
                 pass
         elif ol.startswith('months=') or ol.startswith('-m='):
             try:
-                days += int(ol[ol.find('=')+1:])*30
+                days += int(ol[ol.find('=') + 1:]) * 30
             except:
                 pass
         elif ol.startswith('weeks=') or ol.startswith('-w='):
             try:
-                days += int(ol[ol.find('=')+1:])*7
+                days += int(ol[ol.find('=') + 1:]) * 7
             except:
                 pass
         elif ol.startswith('days=') or ol.startswith('-d='):
             try:
-                days += int(ol[ol.find('=')+1:])
+                days += int(ol[ol.find('=') + 1:])
             except:
                 pass
 
         # Deck colors to search
         elif ol.startswith('-c=') or ol.startswith('colors='):
             if colors is None:
-                colors = parse_colors(ol[ol.find('=')+1:])
+                colors = parse_colors(ol[ol.find('=') + 1:])
                 if colors is not None and colors != 'all':
                     can_use_cache = False
 
@@ -233,12 +236,12 @@ async def data_query(query, channel):
         for f in formats:
             # Use data from the cache if possible
             if can_use_cache:
-                #data_to_use[f] = DATA_CACHE[s][f][colors]
+                # data_to_use[f] = DATA_CACHE[s][f][colors]
                 data_to_use[f] = cache[s][f]
             elif f'{f}{query_str}' in cache[s]:
                 data_to_use[f] = cache[s][f'{f}{query_str}']
             else:
-                #data_to_use[f] = fetch_format_data(s, f, colors, start_date, end_date)
+                # data_to_use[f] = fetch_format_data(s, f, colors, start_date, end_date)
                 try:
                     # Otherwise, query from 17lands and add the result to the cache
                     data_to_use[f] = {}
@@ -308,9 +311,10 @@ async def on_message(message):
 
 @tasks.loop(hours=12)
 async def refresh_data():
-    #init_cache()
-    #print(DATA_CACHE)
+    # init_cache()
+    # print(DATA_CACHE)
     fetch_data(UPDATING_SETS)
+
 
 def fetch_data(sets):
     for s in sets:
@@ -342,4 +346,5 @@ except:
     # remove this later.
     #    -ZacharyN
     from LocalToken import TOKEN
+
     client.run(TOKEN)
