@@ -367,10 +367,10 @@ refresh_data.start()
 try:
     client.run(os.environ['TOKEN'])
 except Exception:
-    print("Critical Error! Could not load token from operating system.")
+    # print("Critical Error! Could not load token from operating system.")
     # Temporarily let this run locally with my bot token, so I can
     # check that everything compiles properly. I'll make sure to
     # remove this later.
     #    -ZacharyN
-    # from LocalToken import TOKEN
-    # client.run(TOKEN)
+    from LocalToken import TOKEN
+    client.run(TOKEN)
