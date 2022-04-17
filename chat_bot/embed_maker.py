@@ -3,8 +3,8 @@ import discord
 
 from WUBRG import get_color_string, COLOR_ALIASES_SUPPORT, COLOUR_GROUPINGS
 
-from chat_bot.settings import FORMAT_NICKNAMES
-from chat_bot.utils import get_card_name
+from chat_bot.utils.consts import FORMAT_NICKNAMES
+from chat_bot.utils.utils import get_card_name
 from chat_bot.Manamoji import Manamoji
 
 

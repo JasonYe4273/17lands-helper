@@ -1,6 +1,8 @@
 from discord import Client
 from discord.emoji import Emoji
 
+from WUBRG import parse_cost
+
 
 class Manamoji:
     MANAMOJIS: list[Emoji] = []
@@ -74,19 +76,6 @@ class Manamoji:
 
         return cls.MISSING
 
-
-    # NOTE: Incomplete
-    # Parses a string mana cost into a list of mana 'elements', while converting
-    # from 'curly-brace' format or plain-text format to our list format.
-    # Eg. {10}{G}{G} would return ['10', 'G', 'G']
-    # Eg. 10GG would return ['1', '0', 'G', 'G'], which is likely not what's wanted.
-    @classmethod
-    # TODO: Move to WUBRG
-    def parse_cost(cls, mana_cost: str) -> list[str]:
-        # TODO: Parse the mana cost from the {1}{W}{B} format into a list of strings.
-        return [char for char in mana_cost]
-        pass
-
     # Takes a mana cost and attempts to return a string of emojis which
     # represent that mana cost, as it would look on the card.
     @classmethod
@@ -98,7 +87,7 @@ class Manamoji:
         """
         if mana_cost is None:
             return ""
-        mana_cost = cls.parse_cost(mana_cost)
+        mana_cost = parse_cost(mana_cost)
         cost = ""
         for sym in mana_cost:
             cost += cls.get_emoji(sym)
@@ -116,7 +105,7 @@ class Manamoji:
         """
         if mana_cost is None:
             return ""
-        mana_cost = cls.parse_cost(mana_cost)
+        mana_cost = parse_cost(mana_cost)
         pips = ['W', 'U', 'B', 'R', 'G', 'C']
         cost = ""
         for sym in pips:

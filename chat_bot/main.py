@@ -1,17 +1,13 @@
 from discord import Client, Message
 from discord.ext import tasks
 
-from chat_bot.settings import COMMAND_STR, DATA_QUERY_L, DATA_QUERY_R, UPDATING_SETS, OLD_SETS, SETS, FORMATS, START_DATE
+from chat_bot.utils.consts import COMMAND_STR, DATA_QUERY_L, DATA_QUERY_R
+from chat_bot.utils.settings import UPDATING_SETS, OLD_SETS
 from chat_bot.Manamoji import Manamoji
 from chat_bot.message_maker import handle_card_request, handle_command
-
-import requests
-import time
-from datetime import date
+from cache import fetch_data
 
 client: Client = Client()
-
-cache: dict = {s: {f: {} for f in FORMATS} for s in SETS}
 
 
 @client.event
@@ -24,11 +20,11 @@ async def on_message(message: Message) -> None:
     if message.author == client.user:
         return
 
-    # Handle data queries of the form {{query}}
+    # Handle data queries of the form '{{query | options}}'
     if message.content.contains(DATA_QUERY_L) and message.content.contains(DATA_QUERY_R):
         await handle_card_request(message.content, message.channel)
 
-    # Only parse messages that start with command string
+    # Only parse messages that start with command string '17!'
     if message.content.startswith(COMMAND_STR):
         await handle_command(message.content, message.channel)
 
@@ -55,31 +51,6 @@ async def on_ready() -> None:
     ##    mgr = SetManager(s, True, False)
     ##    mgr.check_for_updates()
     print('Logged in as {0.user}'.format(client))
-
-
-def fetch_data(sets: list[str]) -> None:
-    """
-    Gets the data the bot uses.
-    :param sets: The list of sets to get data for.
-    """
-    for s in sets:
-        cache[s] = {f: {} for f in FORMATS}
-        for f in FORMATS:
-            success = False
-            while not success:
-                try:
-                    print(f'Fetching data for {s} {f}...')
-                    response = requests.get(
-                        'https://www.17lands.com/card_ratings/data?' +
-                        f'expansion={s}&format={f}&start_date={START_DATE}&end_date={date.today()}'
-                    )
-                    for c in response.json():
-                        cache[s][f][c['name']] = c
-                    success = True
-                    print('Success!')
-                except Exception:
-                    print('Failed; trying again in 30s')
-                    time.sleep(30)
 
 
 def main():

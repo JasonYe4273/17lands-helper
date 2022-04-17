@@ -3,13 +3,11 @@ import requests
 from datetime import date, datetime, timedelta
 from WUBRG import get_color_identity
 
-from chat_bot.settings import COMMAND_STR, DEFAULT_FORMAT, START_DATE, DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID, QUOTE_PAIRS
-from chat_bot.settings import DATA_COMMANDS, FORMAT_MAPPING, SETS, FORMATS
-from chat_bot.utils import get_card_name
+from chat_bot.utils.consts import COMMAND_STR, DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID, QUOTE_PAIRS
+from chat_bot.utils.settings import DEFAULT_FORMAT, START_DATE, DATA_COMMANDS, FORMAT_MAPPING, SETS
+from chat_bot.utils.utils import get_card_name
 from chat_bot.embed_maker import gen_card_embed, supported_color_strings
-
-
-cache: dict = {s: {f: {} for f in FORMATS} for s in SETS}
+from cache import cache
 
 
 async def send_embed_message(channel: discord.TextChannel, embed: discord.Embed) -> None:
