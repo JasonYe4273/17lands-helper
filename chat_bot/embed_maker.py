@@ -1,8 +1,27 @@
+from typing import Union
 import discord
-import WUBRG
-from WUBRG import COLOR_ALIASES_SUPPORT, COLOUR_GROUPINGS
-from settings import FORMAT_NICKNAMES
-from utils import format_data, get_card_name
+
+from WUBRG import get_color_string, COLOR_ALIASES_SUPPORT, COLOUR_GROUPINGS
+
+from chat_bot.settings import FORMAT_NICKNAMES
+from chat_bot.utils import get_card_name
+from chat_bot.Manamoji import Manamoji
+
+
+def format_data(data: Union[float, int, str]) -> str:
+    """
+    Automatically formats data to the correct number of characters for display in embeds.
+    Also automatically changes values less than 1 to percentages.
+    :param data: The data to format.
+    :return: The formatted data as a string.
+    """
+    if type(data) != float:
+        return str(data)
+    # TODO: Make this a range from -1/0 to 1.
+    elif data < 1:
+        return "{:.1f}%".format(data * 100)
+    else:
+        return "{:.2f}".format(data)
 
 
 # - Data Embeds
@@ -45,13 +64,13 @@ def gen_card_embed(card: dict, set_code: str, data: dict, formats: list[str], fi
     name = card['name']
     stored_name = get_card_name(card)
 
-    title = name + " " + WUBRG.emojify_mana_cost(mana_cost)
+    title = name + " " + Manamoji.emojify_mana_cost(mana_cost)
     embed = new_data_embed(title, url="https://www.17lands.com/card_ratings")
 
     # Generate a field to show the scope of the data.
     date_range = f"Date Range:\t\t {start_date} to {end_date}" + '\r\n'
 
-    filter_emojis = WUBRG.emojify_color_id(color_filter)
+    filter_emojis = Manamoji.emojify_color_id(color_filter)
     if filter_emojis == "":
         filter_emojis = "*None*"
     filter_str = "Colour filter: \t\t" + filter_emojis + '\r\n'
@@ -86,8 +105,8 @@ def gen_colour_rating_embed() -> discord.Embed:
         d = COLOUR_GROUPINGS[d_key]
         msg = ""
         for s in d:
-            color_string = WUBRG.get_color_string(s)
-            color_id = WUBRG.emojify_color_id(color_string)
+            color_string = get_color_string(s)
+            color_id = Manamoji.emojify_color_id(color_string)
 
             # TODO: Populate with real data.
             msg += color_id + ': ' + "`% 00.00`" + '\r\n'
@@ -123,8 +142,8 @@ def supported_color_strings() -> discord.Embed:
         d = COLOR_ALIASES_SUPPORT[d_key]
         msg = ""
         for s in d:
-            color_string = WUBRG.get_color_string(s)
-            color_id = WUBRG.emojify_color_id(color_string)
+            color_string = get_color_string(s)
+            color_id = Manamoji.emojify_color_id(color_string)
 
             msg += color_id + ' - ' + s + '\r\n'
         ret.add_field(name=d_key, value=msg, inline=True)

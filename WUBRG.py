@@ -1,21 +1,3 @@
-# Used to populate the emojis which represent mana costs and set symbols.
-# Note, not calling this means no emojis will be found, and embeds will be emoji-less.
-MANAMOJIS: list = []
-SETMOJIS: list = []
-
-
-def cache_manamojis(client) -> None:
-    global MANAMOJIS
-    MANAMOJIS = [emo for emo in client.emojis if emo.name.startswith('mana')]
-    print(f'{len(MANAMOJIS)} manamojis found!')
-
-    # TODO: Add in support for set symbols.
-    # global SETMOJIS
-    # SETMOJIS = [emo for emo in client.emojis if emo.name.startswith('set')]
-    # print(f'{len(SETMOJIS)} setmojis found!')
-
-
-# - Colour Mapping ###
 # Groupings of colour-sets supported.
 COLOR_ALIASES_SUPPORT: dict[str, dict[str, str]] = {
     'Colors': {
@@ -92,7 +74,7 @@ MAIN_COLOUR_GROUPS = ["", "WU", "WB", "WR", "WG", "UB", "UR"," UG", "BR", "BG", 
 def get_color_string(s: str) -> str:
     """
     Takes in a string, and attempts to convert it to a color string.
-    If the string is invalid, returns 'WUBRGC'.
+    If the string is invalid, returns ''.
     :param s: The string to get colours from
     :return: 'WUBRGC' or a subset of 'WUBRG'
     """
@@ -107,58 +89,25 @@ def get_color_string(s: str) -> str:
     remainder = char_set - valid_chars
 
     if len(remainder) > 0:
-        print(f'Invalid color string provided: {s}. Converting to "WUBRGC"')
-        s = "WUBRGC"
+        print(f'Invalid color string provided: {s}. Converting to ""')
+        s = ""
 
     return s
 
 
-# TODO: Remove this
-# Takes in a valid colour string, or colour string alias,
-# and then returns a dictionary of booleans.
-def get_color_map(color_str: str) -> dict[str, bool]:
-    s = get_color_string(color_str)
-    colors_exist = {'W': False,
-                    'U': False,
-                    'B': False,
-                    'R': False,
-                    'G': False,
-                    'C': False}
-
-    for c in s:
-        colors_exist[c] = True
-
-    return colors_exist
-
-
-# - Emojis
-# To automatically grab server emojis installed from
-# https://github.com/scryfall/manamoji-discord/tree/main/emojis
-def get_emoji(emoji_str: str) -> str:
+def get_color_identity(color_string: str) -> str:
     """
-    Format and convert the emoji trying to be found.
-    EG: 'W' gets converted to 'w', and then 'manaw'.
-    :param emoji_str: The emoji to find.
-    :return: Best guess at the emoji being requested.
+    Takes in a color string, and attempts to convert it to a
+    color identity string.
+    :param color_string: The color string to convert.
+    :return: A color identity string, a subset of 'WUBRG'.
     """
-
-    emoji_str = emoji_str.lower()
-
-    manamoji_str = emoji_str
-    if not manamoji_str.startswith('mana'):
-        manamoji_str = 'mana' + manamoji_str
-
-    setmoji_str = emoji_str
-    if not setmoji_str.startswith('set'):
-        # setmoji_str = 'set' + setmoji_str
-        pass
-
-    manamojis = [emo for emo in MANAMOJIS if emo.name == manamoji_str]
-
-    if len(manamojis) > 0:
-        return str(manamojis[0])
-    else:
-        return ""
+    char_set = set(get_color_string(color_string))
+    s = ''
+    for c in "WUBRG":
+        if c in char_set:
+            s += c
+    return s
 
 
 # NOTE: Incomplete
@@ -170,41 +119,3 @@ def parse_cost(mana_cost: str) -> list[str]:
     # TODO: Parse the mana cost from the {1}{W}{B} format into a list of strings.
     return [char for char in mana_cost]
     pass
-
-
-# Takes a mana cost and attempts to return a string of emojis which
-# represent that mana cost, as it would look on the card.
-def emojify_mana_cost(mana_cost: str) -> str:
-    """
-    Converts human-like message with emoji to a discord usable message.
-    :param mana_cost: The mana cost to add emojis to.
-    :return: A string which will display properly when sent.
-    """
-    if mana_cost is None:
-        return ""
-    mana_cost = parse_cost(mana_cost)
-    cost = ""
-    for sym in mana_cost:
-        cost += get_emoji(sym)
-    return cost
-
-
-# Takes a mana cost and attempts to return a string of emojis which
-# represent that teh colours contained in that card.
-# NOTE: Not a true colour_id, potentially worth renaming.
-def emojify_color_id(mana_cost: str) -> str:
-    """
-    Converts human-like message with emoji to a discord usable message.
-    :param mana_cost: The mana cost to add emojis to.
-    :return: A string which will display properly when sent.
-    """
-    if mana_cost is None:
-        return ""
-    mana_cost = parse_cost(mana_cost)
-    pips = ['W', 'U', 'B', 'R', 'G', 'C']
-    cost = ""
-    for sym in pips:
-        if sym not in mana_cost:
-            continue
-        cost += get_emoji(sym)
-    return cost
