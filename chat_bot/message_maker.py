@@ -49,6 +49,21 @@ async def handle_command(message: str, channel: TextChannel):
         await send_message(channel, '<https://github.com/JasonYe4273/17lands-helper>')
 
 
+def query_scryfall(raw_card_name):
+    # Try get unique card from Scryfall
+    try:
+        response = requests.get(f'https://api.scryfall.com/cards/named?fuzzy={raw_card_name}').json()
+        if response['object'] == 'error':
+            if response['details'][:20] == 'Too many cards match':
+                return {'error': f'Error: multiple card matches for "{raw_card_name}"'}
+            else:
+                return {'error': f'Error: cannot find card "{raw_card_name}"'}
+        else:
+            return response
+    except Exception:
+        return {'error': f'Error querying Scryfall for {raw_card_name}'}
+
+
 # TODO: Restructure this
 async def data_query(query: str, channel: TextChannel) -> None:
     """
@@ -93,17 +108,11 @@ async def data_query(query: str, channel: TextChannel) -> None:
         #    requested_cards.append(card)
 
         # Try get unique card from Scryfall
-        try:
-            response = requests.get(f'https://api.scryfall.com/cards/named?fuzzy={raw_card_name}').json()
-            if response['object'] == 'error':
-                if response['details'][:20] == 'Too many cards match':
-                    await send_message(channel, f'Error: multiple card matches for "{raw_card_name}"')
-                else:
-                    await send_message(channel, f'Error: cannot find card "{raw_card_name}"')
-            else:
-                requested_cards.append(response)
-        except Exception:
-            await send_message(channel, f'Error querying Scryfall for {raw_card_name}')
+        response = query_scryfall(raw_card_name)
+        if 'error' not in response:
+            requested_cards.append(response)
+        else:
+            await send_message(channel, response['error'])
 
     options = options_query.split(' ')
 

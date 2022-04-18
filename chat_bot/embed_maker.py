@@ -3,7 +3,7 @@ import discord
 
 from WUBRG import get_color_string, COLOR_ALIASES_SUPPORT, COLOUR_GROUPINGS
 
-from chat_bot.utils.consts import FORMAT_NICKNAMES
+from chat_bot.utils.consts import FORMAT_NICKNAMES, STAT_FORMAT_STRINGS
 from chat_bot.utils.utils import get_card_name
 from chat_bot.Manamoji import Manamoji
 
@@ -147,3 +147,81 @@ def supported_color_strings() -> discord.Embed:
             msg += color_id + ' - ' + s + '\r\n'
         ret.add_field(name=d_key, value=msg, inline=True)
     return ret
+
+
+# Returns an embed which displays the game stats about a particular card.
+def gen_card_embeds_v2(card_info, data, start_date=None, end_date=None):
+    print(card_info)
+    s = card_info['set']
+    # formats = card_info['formats']
+    formats = ['PremierDraft', 'TradDraft', 'QuickDraft']
+    color_filters = card_info['colors']
+    columns = card_info['columns']
+
+    def remove(col):
+        if col in columns:
+            columns.remove(col)
+
+    remove('Color')
+    remove('Rarity')
+
+    mana_cost = card_info['mana_cost']
+    name = card_info['name']
+    stored_name = card_info['stored_name']
+
+    ##    # Generate a field to show the scope of the data.
+    ##    if start_date is None:
+    ##        default = SET_CONFIG[s][formats[0]]['StartDate']
+    ##        start_date = default if default is not None else DEFAULT_START_DATE
+    ##    if end_date is None:
+    ##        default = SET_CONFIG[s][formats[0]]['EndDate']
+    ##        end_date = default if default is not None else date.today()
+    ##    date_range = f"Date Range:\t\t {start_date} to {end_date}"  + '\r\n'
+
+    # TODO: fetch color winrate from 17lands
+
+    title = name + " " + Manamoji.emojify_mana_cost(mana_cost)
+    # avreage_winrate = "Avg. Overall Winrate: \t" + "%00.00" + '\r\n'
+    # color_winrate = "Avg. " + emojify_color_id(card['color_identity']) + " Winrate: \t" + "%00.00" + '\r\n'
+    description = ""  # TODO: Add in the average winrate of 17 lands users overall and in the card colours.
+    embed = new_data_embed(title, description, url=card_info['url'])
+
+    # Generate a list of format names and colour groupings in the order they need to be used.
+    format_temp = []
+    color_temp = []
+    for x in formats:
+        for y in color_filters:
+            format_temp.append(x)
+            color_temp.append(y)
+
+    # Generate a column of colour groups
+    colors_column = "\r\n".join([f'`   NONE   `' if not c else f'` {c} `{Manamoji.emojify_color_id(c)}' for c in color_temp])
+    embed.add_field(name=f"`  Colors  `", value=colors_column, inline=True)
+
+    # Generate a column of format names
+    FORMAT_STRING = "`{:^9}`"
+    formats_column = "\r\n".join([FORMAT_STRING.format(FORMAT_NICKNAMES[f]) for f in format_temp])
+    embed.add_field(name=f"` Formats `", value=formats_column, inline=True)
+
+    # Generate a table containing the card data
+    FORMAT_STRING = "`{:^6}`"
+    fields_strs = [FORMAT_STRING.format(cols) for cols in columns]
+    data_strs = ""
+    for x in range(0, len(format_temp)):
+        data = data.query_frames_cache(s, format_temp[x], color_temp[x], stored_name)
+        if data is not None:
+            data = data[columns]
+            # TODO: Better handle NaNs.
+            data_strs += " ".join(
+                [STAT_FORMAT_STRINGS[columns[i]].format(data[i]) for i in range(len(columns))]) + '\r\n'
+        else:
+            data_strs += " ".join([FORMAT_STRING.format('--') for i in range(len(columns))]) + '\r\n'
+
+    embed.add_field(name=" ".join(fields_strs), value=data_strs, inline=True)
+
+    return embed
+
+
+
+
+

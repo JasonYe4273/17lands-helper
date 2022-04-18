@@ -73,7 +73,10 @@ COLOUR_GROUPINGS: dict[str, list[str]] = {
 }
 
 MAIN_COLOUR_GROUPS = ["", "WU", "WB", "WR", "WG", "UB", "UR", " UG", "BR", "BG", "RG"]
-
+COLOR_COMBINATIONS = ['', 'W', 'U', 'B', 'R', 'G',
+                      'WU', 'WB', 'WR', 'WG', 'UB', 'UR', 'UG', 'BR', 'BG', 'RG',
+                      'WUR', 'WBR', 'WBG', 'UBG', 'URG', 'WUB', 'WUG', 'WRG', 'UBR', 'BRG',
+                      'WUBR', 'WUBG', 'WURG', 'WBRG', 'UBRG', 'WUBRG']
 
 BASE_MANA_SYMBOLS = {"W", "U", "B", "R", "G", "C"}
 NUMERIC_MANA_SYMBOLS = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
@@ -126,6 +129,30 @@ def get_color_identity(color_string: str) -> str:
         if c in char_set:
             s += c
     return s
+
+
+def get_color_supersets(color_id: str, max_len: int = 5, strict: bool = False) -> list[str]:
+    """
+    Gets all possible permutations of WUBRG which contain the color_id.
+    Can limit the length of the permutations returned with l.
+    :param color_id: The colours to look for in the permutations.
+    :param max_len: The max length of the permutations. Default: 5
+    :param strict: Whether the subset should be strict
+    :return: A list of color ids.
+    """
+    color_ids = list()
+
+    cis = set(get_color_identity(color_id))
+
+    for c in COLOR_COMBINATIONS:
+        if strict:
+            if len(c) < max_len and cis < set(c):
+                color_ids.append(c)
+        else:
+            if len(c) <= max_len and cis <= set(c):
+                color_ids.append(c)
+
+    return color_ids
 
 
 def parse_cost(mana_cost: str) -> list[str]:
