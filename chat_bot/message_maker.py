@@ -1,4 +1,4 @@
-import discord
+from discord import TextChannel, Embed
 import requests
 from datetime import date, datetime, timedelta
 from WUBRG import get_color_identity
@@ -7,10 +7,10 @@ from chat_bot.utils.consts import COMMAND_STR, DATA_QUERY_L, DATA_QUERY_R, DATA_
 from chat_bot.utils.settings import DEFAULT_FORMAT, START_DATE, DATA_COMMANDS, FORMAT_MAPPING, SETS
 from chat_bot.utils.utils import get_card_name
 from chat_bot.embed_maker import gen_card_embed, supported_color_strings
-from cache import cache
+from chat_bot.DataCache import DataCache
 
 
-async def send_embed_message(channel: discord.TextChannel, embed: discord.Embed) -> None:
+async def send_embed_message(channel: TextChannel, embed: Embed) -> None:
     """
     Sends an embed to the specified channel.
     :param channel: The channel to send the message to.
@@ -20,7 +20,7 @@ async def send_embed_message(channel: discord.TextChannel, embed: discord.Embed)
     await channel.send(embed=embed)
 
 
-async def send_message(channel: discord.TextChannel, message: str) -> None:
+async def send_message(channel: TextChannel, message: str) -> None:
     """
     Sends a message to the specified channel.
     :param channel: The channel to send the message to.
@@ -30,7 +30,7 @@ async def send_message(channel: discord.TextChannel, message: str) -> None:
     await channel.send(message)
 
 
-async def handle_command(message, channel):
+async def handle_command(message: str, channel: TextChannel):
     print(f'Parsing message: {message}')
     rest = message[len(COMMAND_STR):].strip()
     print(f'rest: {rest}')
@@ -48,7 +48,8 @@ async def handle_command(message, channel):
         await send_message(channel, '<https://github.com/JasonYe4273/17lands-helper>')
 
 
-async def data_query(query: str, channel) -> None:
+# TODO: Restructure this
+async def data_query(query: str, channel: TextChannel) -> None:
     """
     Handles a query for data sent by a user.
     :param query: The found query from the user.
@@ -175,7 +176,7 @@ async def data_query(query: str, channel) -> None:
     filtered_sets = []
     for s in sets:
         for c in requested_cards:
-            if get_card_name(c) in cache[s][formats[0]]:
+            if get_card_name(c) in DataCache[s][formats[0]]:
                 filtered_sets.append(s)
                 break
     sets = filtered_sets
@@ -210,15 +211,15 @@ async def data_query(query: str, channel) -> None:
             # Use data from the cache if possible
             if can_use_cache:
                 # data_to_use[f] = DATA_CACHE[s][f][colors]
-                data_to_use[f] = cache[s][f]
-            elif f'{f}{query_str}' in cache[s]:
-                data_to_use[f] = cache[s][f'{f}{query_str}']
+                data_to_use[f] = DataCache[s][f]
+            elif f'{f}{query_str}' in DataCache[s]:
+                data_to_use[f] = DataCache[s][f'{f}{query_str}']
             else:
                 # data_to_use[f] = fetch_format_data(s, f, colors, start_date, end_date)
                 try:
                     # Otherwise, query from 17lands and add the result to the cache
                     data_to_use[f] = {}
-                    cache[s][f'{f}{query_str}'] = {}
+                    DataCache[s][f'{f}{query_str}'] = {}
                     print(f'Fetching data for {s} {f}...')
                     response = requests.get(
                         'https://www.17lands.com/card_ratings/data?' +
@@ -226,7 +227,7 @@ async def data_query(query: str, channel) -> None:
                     )
                     for c in response.json():
                         data_to_use[f][c['name']] = c
-                        cache[s][f'{f}{query_str}'][c['name']] = c
+                        DataCache[s][f'{f}{query_str}'][c['name']] = c
                     print('Success!')
                 except Exception:
                     await send_message(channel, f'Failed to fetch data for {s} {f} from 17lands')
@@ -247,14 +248,14 @@ async def data_query(query: str, channel) -> None:
                 ))
 
 
-async def handle_card_request(message, channel):
-    next_data_query = message.content.find(DATA_QUERY_L)
+async def handle_card_request(message: str, channel: TextChannel):
+    next_data_query = message.find(DATA_QUERY_L)
     while next_data_query != -1:
         start = next_data_query + len(DATA_QUERY_L)
-        end = message.content.find(DATA_QUERY_R, start)
+        end = message.find(DATA_QUERY_R, start)
         if end == -1:
             break
-        await data_query(message.content[start:end], channel)
-        next_data_query = message.content.find(DATA_QUERY_L, end)
+        await data_query(message[start:end], channel)
+        next_data_query = message.find(DATA_QUERY_L, end)
 
 

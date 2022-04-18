@@ -15,10 +15,9 @@ def format_data(data: Union[float, int, str]) -> str:
     :param data: The data to format.
     :return: The formatted data as a string.
     """
-    if type(data) != float:
+    if not isinstance(data, float):
         return str(data)
-    # TODO: Make this a range from -1/0 to 1.
-    elif data < 1:
+    elif 0 < data < 1:
         return "{:.1f}%".format(data * 100)
     else:
         return "{:.2f}".format(data)
