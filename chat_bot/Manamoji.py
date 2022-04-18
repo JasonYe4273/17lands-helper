@@ -1,7 +1,7 @@
 from discord import Client
 from discord.emoji import Emoji
 
-from WUBRG import parse_cost
+from WUBRG import parse_cost, get_color_string
 
 
 class Manamoji:
@@ -76,13 +76,11 @@ class Manamoji:
 
         return cls.MISSING
 
-    # Takes a mana cost and attempts to return a string of emojis which
-    # represent that mana cost, as it would look on the card.
     @classmethod
     def emojify_mana_cost(cls, mana_cost: str) -> str:
         """
-        Converts human-like message with emoji to a discord usable message.
-        :param mana_cost: The mana cost to add emojis to.
+        Converts a card/human-like mana cost to a set of emoji-based symbols.
+        :param mana_cost: The mana cost to convert.
         :return: A string which will display properly when sent.
         """
         if mana_cost is None:
@@ -93,23 +91,18 @@ class Manamoji:
             cost += cls.get_emoji(sym)
         return cost
 
-    # Takes a mana cost and attempts to return a string of emojis which
-    # represent that teh colours contained in that card.
-    # NOTE: Not a true colour_id, potentially worth renaming.
     @classmethod
-    def emojify_color_id(cls, mana_cost: str) -> str:
+    def emojify_color_string(cls, color_string: str) -> str:
         """
-        Converts human-like message with emoji to a discord usable message.
-        :param mana_cost: The mana cost to add emojis to.
+        Converts a color string into its set of mana symbols.
+        :param color_string: The color string to convert.
         :return: A string which will display properly when sent.
         """
-        if mana_cost is None:
-            return ""
-        mana_cost = parse_cost(mana_cost)
-        pips = ['W', 'U', 'B', 'R', 'G', 'C']
+        color_string = get_color_string(color_string)
         cost = ""
-        for sym in pips:
-            if sym not in mana_cost:
-                continue
-            cost += cls.get_emoji(sym)
+        for sym in color_string:
+            emoji = cls.get_emoji(sym)
+            cost += emoji
         return cost
+
+

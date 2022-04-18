@@ -90,3 +90,7 @@ STAT_ALIASES: dict[str, str] = {
     "gih": "GIH WR",
     "gnd": "GND WR",
 }
+
+
+DEFAULT_STATS: list[str] = ["avg_seen", "avg_pick", "win_rate", "opening_hand_win_rate", "drawn_win_rate",
+                            "ever_drawn_win_rate", "never_drawn_win_rate", "drawn_improvement_win_rate"]

@@ -4,7 +4,7 @@ from discord.ext import tasks
 from chat_bot.utils.consts import COMMAND_STR, DATA_QUERY_L, DATA_QUERY_R
 from chat_bot.utils.settings import UPDATING_SETS, OLD_SETS
 from chat_bot.Manamoji import Manamoji
-from chat_bot.message_maker import handle_card_request, handle_command
+from chat_bot.message_maker import handle_card_request, handle_card_request_v2, handle_command
 from chat_bot.DataCache import DataCache
 
 client: Client = Client()
@@ -22,7 +22,7 @@ async def on_message(message: Message) -> None:
 
     # Handle data queries of the form '{{query | options}}'
     if (DATA_QUERY_L in message.content) and (DATA_QUERY_R in message.content):
-        await handle_card_request(message.content, message.channel)
+        await handle_card_request_v2(message.content, message.channel)
 
     # Only parse messages that start with command string '17!'
     if message.content.startswith(COMMAND_STR):

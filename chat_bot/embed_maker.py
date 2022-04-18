@@ -3,7 +3,7 @@ import discord
 
 from WUBRG import get_color_string, COLOR_ALIASES_SUPPORT, COLOUR_GROUPINGS
 
-from chat_bot.utils.consts import FORMAT_NICKNAMES, STAT_FORMAT_STRINGS
+from chat_bot.utils.consts import FORMAT_NICKNAMES, STAT_FORMAT_STRINGS, STAT_ALIASES
 from chat_bot.utils.utils import get_card_name
 from chat_bot.Manamoji import Manamoji
 
@@ -40,7 +40,7 @@ def new_data_embed(title: str, description: str = "", url: str = "") -> discord.
     return embed
 
 
-def gen_card_embed(card: dict, set_code: str, data: dict, formats: list[str], fields: list[tuple[str, str]],
+def gen_card_embed(card: dict, set_code: str, data: dict, formats: list[str], fields: list[str],
                    start_date: str, end_date: str, color_filter: str = None) -> discord.Embed:
     """
     Returns an embed which displays the game stats about a particular card.
@@ -69,7 +69,8 @@ def gen_card_embed(card: dict, set_code: str, data: dict, formats: list[str], fi
     # Generate a field to show the scope of the data.
     date_range = f"Date Range:\t\t {start_date} to {end_date}" + '\r\n'
 
-    filter_emojis = Manamoji.emojify_color_id(color_filter)
+    print(f"color_filter: {color_filter}")
+    filter_emojis = Manamoji.emojify_color_string(color_filter)
     if filter_emojis == "":
         filter_emojis = "*None*"
     filter_str = "Colour filter: \t\t" + filter_emojis + '\r\n'
@@ -84,11 +85,12 @@ def gen_card_embed(card: dict, set_code: str, data: dict, formats: list[str], fi
 
     # Generate a field which is populated with a 'table' of card data.
     format_string = "`{:^6}`"
-    fields_strings = [format_string.format(f) for (_, f) in fields]
-    data_strings = "\r\n".join(
-        [" ".join([format_string.format(format_data(data[f][stored_name][field])) for (field, _) in fields]) for f in
-         formats])
-    embed.add_field(name=" ".join(fields_strings), value=data_strings, inline=True)
+    fields_strings = [format_string.format(STAT_ALIASES[f]) for f in fields]
+    data_strings = []
+    for f in formats:
+        data_string = " ".join([format_string.format(format_data(data[f][stored_name][field])) for field in fields])
+        data_strings.append(data_string)
+    embed.add_field(name=" ".join(fields_strings), value="\r\n".join(data_strings), inline=True)
 
     return embed
 
@@ -105,7 +107,7 @@ def gen_colour_rating_embed() -> discord.Embed:
         msg = ""
         for s in d:
             color_string = get_color_string(s)
-            color_id = Manamoji.emojify_color_id(color_string)
+            color_id = Manamoji.emojify_color_string(color_string)
 
             # TODO: Populate with real data.
             msg += color_id + ': ' + "`% 00.00`" + '\r\n'
@@ -142,7 +144,7 @@ def supported_color_strings() -> discord.Embed:
         msg = ""
         for s in d:
             color_string = get_color_string(s)
-            color_id = Manamoji.emojify_color_id(color_string)
+            color_id = Manamoji.emojify_color_string(color_string)
 
             msg += color_id + ' - ' + s + '\r\n'
         ret.add_field(name=d_key, value=msg, inline=True)
@@ -196,7 +198,7 @@ def gen_card_embeds_v2(card_info, data, start_date=None, end_date=None):
             color_temp.append(y)
 
     # Generate a column of colour groups
-    colors_column = "\r\n".join([f'`   NONE   `' if not c else f'` {c} `{Manamoji.emojify_color_id(c)}' for c in color_temp])
+    colors_column = "\r\n".join([f'`   NONE   `' if not c else f'` {c} `{Manamoji.emojify_color_string(c)}' for c in color_temp])
     embed.add_field(name=f"`  Colors  `", value=colors_column, inline=True)
 
     # Generate a column of format names

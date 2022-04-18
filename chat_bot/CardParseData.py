@@ -3,7 +3,7 @@ import re
 from datetime import date, timedelta, datetime
 
 from WUBRG import FAILSAFE, COLOR_COMBINATIONS, get_color_identity, get_color_supersets
-from chat_bot.utils.consts import STAT_ALIASES
+from chat_bot.utils.consts import STAT_ALIASES, DEFAULT_STATS
 from chat_bot.utils.settings import FORMAT_MAPPINGS, DEFAULT_FORMAT, SETS
 from chat_bot.utils.utils import query_scryfall
 
@@ -274,6 +274,9 @@ class CardParseData:
             # info['formats'] = settings.get_user_formats(username)
             self.OPTIONS.FORMATS = [DEFAULT_FORMAT]
 
+        if not self.OPTIONS.STATS:
+            self.OPTIONS.STATS = DEFAULT_STATS
+
         if not self.OPTIONS.SET:
             # TODO: Search through the sets and find the most recent set in which the card was printed.
             self.OPTIONS.SET = self.CARD_DATA['set'].upper()
@@ -333,7 +336,7 @@ class MessageParseData:
 
 if __name__ == "__main__":
     test_strings = list()
-    test_strings.append('{{"Virus Beetle" "Inkrise Infiltrator" | CABARET}}')
+    test_strings.append('{{"Virus Beetle" "Inkrise Infiltrator" | -w=1 -c=ub}}')
     for string in test_strings:
         card_parse = MessageParseData(string)
         for card_call in card_parse.CARD_CALLS:

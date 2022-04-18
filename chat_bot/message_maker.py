@@ -193,12 +193,41 @@ def get_option_params(options_query, requested_cards):
         start_date = START_DATE
         # result_description = f' up{result_description}'
 
-    cols = [(dc, dc_name) for (dc, dc_name, v) in data_commands.values() if not v]
+    cols = [dc for (dc, dc_name, v) in data_commands.values() if not v]
 
     return start_date, end_date, colors, sets, formats, can_use_cache, cols
 
 
-# TODO: Restructure this
+def get_data_to_use(set_code, formats, query_str, use_cache):
+    data_to_use = {}
+    for f in formats:
+        # Use data from the cache if possible
+        if use_cache:
+            # data_to_use[f] = DATA_CACHE[s][f][colors]
+            data_to_use[f] = DataCache[set_code][f]
+        elif f'{f}{query_str}' in DataCache[set_code]:
+            data_to_use[f] = DataCache[set_code][f'{f}{query_str}']
+        else:
+            # data_to_use[f] = fetch_format_data(s, f, colors, start_date, end_date)
+            try:
+                # Otherwise, query from 17lands and add the result to the cache
+                data_to_use[f] = {}
+                DataCache[set_code][f'{f}{query_str}'] = {}
+                print(f'Fetching data for {set_code} {f}...')
+                response = requests.get(
+                    'https://www.17lands.com/card_ratings/data?' +
+                    f'expansion={set_code}&format={f}{query_str}'
+                )
+                for c in response.json():
+                    data_to_use[f][c['name']] = c
+                    DataCache[set_code][f'{f}{query_str}'][c['name']] = c
+                print('Success!')
+            except Exception:
+                pass
+                # await send_message(channel, f'Failed to fetch data for {s} {f} from 17lands')
+    return data_to_use
+
+
 async def data_query(query: str, channel: TextChannel) -> None:
     """
     Handles a query for data sent by a user.
@@ -221,31 +250,7 @@ async def data_query(query: str, channel: TextChannel) -> None:
 
     sent = []
     for s in sets:
-        data_to_use = {}
-        for f in formats:
-            # Use data from the cache if possible
-            if can_use_cache:
-                # data_to_use[f] = DATA_CACHE[s][f][colors]
-                data_to_use[f] = DataCache[s][f]
-            elif f'{f}{query_str}' in DataCache[s]:
-                data_to_use[f] = DataCache[s][f'{f}{query_str}']
-            else:
-                # data_to_use[f] = fetch_format_data(s, f, colors, start_date, end_date)
-                try:
-                    # Otherwise, query from 17lands and add the result to the cache
-                    data_to_use[f] = {}
-                    DataCache[s][f'{f}{query_str}'] = {}
-                    print(f'Fetching data for {s} {f}...')
-                    response = requests.get(
-                        'https://www.17lands.com/card_ratings/data?' +
-                        f'expansion={s}&format={f}{query_str}'
-                    )
-                    for c in response.json():
-                        data_to_use[f][c['name']] = c
-                        DataCache[s][f'{f}{query_str}'][c['name']] = c
-                    print('Success!')
-                except Exception:
-                    await send_message(channel, f'Failed to fetch data for {s} {f} from 17lands')
+        data_to_use = get_data_to_use(s, formats, query_str, can_use_cache)
         for card in requested_cards:
             card_name = get_card_name(card)
             if card_name in data_to_use[formats[0]] and card_name not in sent:
@@ -263,27 +268,6 @@ async def data_query(query: str, channel: TextChannel) -> None:
                 ))
 
 
-async def handle_card_request_v2(message: str, channel: TextChannel) -> None:
-    match = card_call_re.findall(message)
-    for call in match:
-        card_parse = MessageParseData(call)
-        for card_call in card_parse.CARD_CALLS:
-
-            data_to_use = None
-            cols = None
-
-            await send_embed_message(channel, gen_card_embed(
-                card=card_call.CARD_DATA,
-                set_code=card_call.OPTIONS.SET,
-                data=data_to_use,
-                formats=card_call.OPTIONS.FORMATS,
-                fields=cols,
-                start_date=str(card_call.OPTIONS.START_DATE),
-                end_date=str(card_call.OPTIONS.END_DATE),
-                color_filter=card_call.OPTIONS.COLORS
-            ))
-
-
 async def handle_card_request(message: str, channel: TextChannel):
     next_data_query = message.find(DATA_QUERY_L)
     while next_data_query != -1:
@@ -293,3 +277,49 @@ async def handle_card_request(message: str, channel: TextChannel):
             break
         await data_query(message[start:end], channel)
         next_data_query = message.find(DATA_QUERY_L, end)
+
+
+async def handle_card_request_v2(message: str, channel: TextChannel) -> None:
+    match = card_call_re.findall(message)
+    for call in match:
+        card_parse = MessageParseData(call)
+        for card_call in card_parse.CARD_CALLS:
+
+            colors = None
+            use_cache = True
+            query_str = ''
+
+            if card_call.OPTIONS.START_DATE != date(2020, 1, 1):
+                use_cache = False
+
+            if card_call.OPTIONS.END_DATE != date.today():
+                use_cache = False
+
+            if len(card_call.OPTIONS.COLORS) == 1:
+                use_cache = False
+                colors = card_call.OPTIONS.COLORS[0]
+
+            if not use_cache:
+                # Calculate 17lands query string
+                query_str = f'&start_date={str(card_call.OPTIONS.START_DATE)}&' \
+                            f'end_date={str(card_call.OPTIONS.END_DATE)}'
+                if colors is not None:
+                    query_str += f'&colors={colors}'
+
+            data_to_use = get_data_to_use(card_call.OPTIONS.SET,
+                                          card_call.OPTIONS.FORMATS,
+                                          query_str,
+                                          use_cache)
+
+            await send_embed_message(channel, gen_card_embed(
+                card=card_call.CARD_DATA,
+                set_code=card_call.OPTIONS.SET,
+                data=data_to_use,
+                formats=card_call.OPTIONS.FORMATS,
+                fields=card_call.OPTIONS.STATS,
+                start_date=str(card_call.OPTIONS.START_DATE),
+                end_date=str(card_call.OPTIONS.END_DATE),
+                color_filter=colors
+            ))
+
+
