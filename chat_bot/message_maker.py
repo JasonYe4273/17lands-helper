@@ -1,10 +1,11 @@
 from discord import TextChannel, Embed
 import requests
 from datetime import date, datetime, timedelta
+
 from WUBRG import get_color_identity
 
 from chat_bot.utils.consts import COMMAND_STR, DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID, QUOTE_PAIRS
-from chat_bot.utils.settings import DEFAULT_FORMAT, START_DATE, DATA_COMMANDS, FORMAT_MAPPING, SETS
+from chat_bot.utils.settings import DEFAULT_FORMAT, START_DATE, DATA_COMMANDS, FORMAT_MAPPINGS, SETS
 from chat_bot.utils.utils import get_card_name
 from chat_bot.embed_maker import gen_card_embed, supported_color_strings
 from chat_bot.DataCache import DataCache
@@ -118,8 +119,8 @@ async def data_query(query: str, channel: TextChannel) -> None:
         ol = o.lower()
         ou = o.upper()
         # Format
-        if ol in FORMAT_MAPPING:
-            formats.append(FORMAT_MAPPING[ol])
+        if ol in FORMAT_MAPPINGS:
+            formats.append(FORMAT_MAPPINGS[ol])
 
         # Sets
         elif ou in SETS:
@@ -257,5 +258,3 @@ async def handle_card_request(message: str, channel: TextChannel):
             break
         await data_query(message[start:end], channel)
         next_data_query = message.find(DATA_QUERY_L, end)
-
-

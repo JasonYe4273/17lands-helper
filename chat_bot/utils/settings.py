@@ -13,7 +13,8 @@ FORMATS: dict[str, list[str]] = {
     #'TradSealed': ['tradsealed', 'bo3sealed', 'sealedbo3'],
     #'DraftChallenge': ['challenge', 'draftchallenge'],
 }
-FORMAT_MAPPING: dict[str, str] = {alias: name for name in FORMATS for alias in FORMATS[name]}
+
+FORMAT_MAPPINGS: dict[str, str] = {alias: name for name in FORMATS for alias in FORMATS[name]}
 
 DATA_COMMANDS: dict[str, list[tuple[str, str, bool]]] = {
     'alsa': [('seen_count', '# Seen', True), ('avg_seen', 'ALSA', False)],

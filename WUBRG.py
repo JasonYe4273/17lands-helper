@@ -1,5 +1,7 @@
 import re
 
+FAILSAFE: str = ''
+
 # Groupings of colour-sets supported.
 COLOR_ALIASES_SUPPORT: dict[str, dict[str, str]] = {
     'Colors': {
