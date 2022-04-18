@@ -1,4 +1,7 @@
 import re
+from re import Pattern
+
+mana_symbol_re: Pattern = re.compile(r'{(.*?)}')
 
 FAILSAFE: str = ''
 
@@ -72,24 +75,25 @@ COLOUR_GROUPINGS: dict[str, list[str]] = {
     'Three-Color': ['Jeskai', 'Mardu', 'Abzan', 'Sultai', 'Temur', 'Esper', 'Bant', 'Naya', 'Grixis', 'Jund']
 }
 
-MAIN_COLOUR_GROUPS = ["", "WU", "WB", "WR", "WG", "UB", "UR", " UG", "BR", "BG", "RG"]
-COLOR_COMBINATIONS = ['', 'W', 'U', 'B', 'R', 'G',
-                      'WU', 'WB', 'WR', 'WG', 'UB', 'UR', 'UG', 'BR', 'BG', 'RG',
-                      'WUR', 'WBR', 'WBG', 'UBG', 'URG', 'WUB', 'WUG', 'WRG', 'UBR', 'BRG',
-                      'WUBR', 'WUBG', 'WURG', 'WBRG', 'UBRG', 'WUBRG']
+MAIN_COLOUR_GROUPS: list[str] = ["", "WU", "WB", "WR", "WG", "UB", "UR", " UG", "BR", "BG", "RG"]
+COLOR_COMBINATIONS: list[str] = ['', 'W', 'U', 'B', 'R', 'G',
+                                 'WU', 'WB', 'WR', 'WG', 'UB', 'UR', 'UG', 'BR', 'BG', 'RG',
+                                 'WUR', 'WBR', 'WBG', 'UBG', 'URG', 'WUB', 'WUG', 'WRG', 'UBR', 'BRG',
+                                 'WUBR', 'WUBG', 'WURG', 'WBRG', 'UBRG', 'WUBRG']
 
-BASE_MANA_SYMBOLS = {"W", "U", "B", "R", "G", "C"}
-NUMERIC_MANA_SYMBOLS = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-                        "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"}
-HYBRID_MANA_SYMBOLS = {"W/U", "W/B", "B/R", "B/G", "U/B", "U/R", "R/G", "R/W", "G/W", "G/U"}
-PHYREXIAN_MANA_SYMBOLS = {"W/P", "U/P", "B/P", "R/P", "G/P"}
-HYBRID_PHYREXIAN_MANA_SYMBOLS = {"B/G/P", "B/R/P", "G/U/P", "G/W/P", "R/G/P",
-                                 "R/W/P", "U/B/P", "U/R/P", "W/B/P", "W/U/P"}
-COLORLESS_HYBRID_MANA_SYMBOLS = {"2/W", "2/U", "2/B", "2/R", "2/G"}
-SPECIAL_MANA_SYMBOLS = {"A", "X", "Y", "Z", "S"}
-COST_SYMBOLS = {"T", "Q", "E"}
-MANA_SYMBOLS = BASE_MANA_SYMBOLS | NUMERIC_MANA_SYMBOLS | HYBRID_MANA_SYMBOLS | PHYREXIAN_MANA_SYMBOLS \
-               | HYBRID_PHYREXIAN_MANA_SYMBOLS | COLORLESS_HYBRID_MANA_SYMBOLS | SPECIAL_MANA_SYMBOLS | COST_SYMBOLS
+BASE_MANA_SYMBOLS: set[str] = {"W", "U", "B", "R", "G", "C"}
+NUMERIC_MANA_SYMBOLS: set[str] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+                                  "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"}
+HYBRID_MANA_SYMBOLS: set[str] = {"W/U", "W/B", "B/R", "B/G", "U/B", "U/R", "R/G", "R/W", "G/W", "G/U"}
+PHYREXIAN_MANA_SYMBOLS: set[str] = {"W/P", "U/P", "B/P", "R/P", "G/P"}
+HYBRID_PHYREXIAN_MANA_SYMBOLS: set[str] = {"B/G/P", "B/R/P", "G/U/P", "G/W/P", "R/G/P",
+                                           "R/W/P", "U/B/P", "U/R/P", "W/B/P", "W/U/P"}
+COLORLESS_HYBRID_MANA_SYMBOLS: set[str] = {"2/W", "2/U", "2/B", "2/R", "2/G"}
+SPECIAL_MANA_SYMBOLS: set[str] = {"A", "X", "Y", "Z", "S"}
+COST_SYMBOLS: set[str] = {"T", "Q", "E"}
+MANA_SYMBOLS: set[str] = BASE_MANA_SYMBOLS | NUMERIC_MANA_SYMBOLS | HYBRID_MANA_SYMBOLS | PHYREXIAN_MANA_SYMBOLS \
+                         | HYBRID_PHYREXIAN_MANA_SYMBOLS | COLORLESS_HYBRID_MANA_SYMBOLS | SPECIAL_MANA_SYMBOLS \
+                         | COST_SYMBOLS
 
 
 def get_color_string(s: str) -> str:
@@ -99,6 +103,8 @@ def get_color_string(s: str) -> str:
     :param s: The string to get colours from
     :return: 'WUBRGC' or a subset of 'WUBRG'
     """
+    if s is None:
+        return FAILSAFE
     s = s.strip().upper()
 
     if s.title() in COLOR_ALIASES:
@@ -171,7 +177,7 @@ def parse_cost(mana_cost: str) -> list[str]:
         return default
 
     # Find anything like {.} in the string,
-    costs = re.findall(r'{(.*?)}', mana_cost)
+    costs = mana_symbol_re.findall(mana_cost)
     # And for the contents of each element,
     for cost in costs:
         # Make sure it is a valid mana symbol.

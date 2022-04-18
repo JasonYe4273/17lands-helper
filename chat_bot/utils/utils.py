@@ -17,7 +17,7 @@ def get_card_name(card: dict) -> str:
         return name[:split].strip()
 
 
-def query_scryfall(raw_card_name):
+def query_scryfall(raw_card_name: str) -> dict:
     # Try get unique card from Scryfall
     try:
         response = requests.get(f'https://api.scryfall.com/cards/named?fuzzy={raw_card_name}').json()

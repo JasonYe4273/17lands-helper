@@ -13,7 +13,7 @@ FORMAT_NICKNAMES: dict[str, str] = {
     'DraftChallenge': 'Chal.',
 }
 
-STAT_FORMAT_STRINGS = {
+STAT_FORMAT_STRINGS: dict[str, str] = {
     "Name": "`{:<20}`",
     "Color": "`{:^6}`",
     "Rarity": "`{:^6}`",

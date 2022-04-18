@@ -4,7 +4,7 @@ from discord.ext import tasks
 from chat_bot.utils.consts import COMMAND_STR, DATA_QUERY_L, DATA_QUERY_R
 from chat_bot.utils.settings import UPDATING_SETS, OLD_SETS
 from chat_bot.Manamoji import Manamoji
-from chat_bot.message_maker import handle_card_request, handle_card_request_v2, handle_command
+from chat_bot.message_maker import handle_card_request_v2, handle_command
 from chat_bot.DataCache import DataCache
 
 client: Client = Client()

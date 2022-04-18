@@ -35,5 +35,5 @@ class DataCache:
                         time.sleep(30)
 
     @classmethod
-    def __class_getitem__(cls, set_code):
+    def __class_getitem__(cls, set_code) -> dict:
         return cls.CACHE[set_code]
