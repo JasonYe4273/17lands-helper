@@ -149,6 +149,7 @@ def supported_color_strings() -> discord.Embed:
     return ret
 
 
+# TODO: Test this and determine if it's worth keeping.
 # Returns an embed which displays the game stats about a particular card.
 def gen_card_embeds_v2(card_info, data, start_date=None, end_date=None):
     print(card_info)

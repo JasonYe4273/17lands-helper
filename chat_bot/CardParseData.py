@@ -1,6 +1,6 @@
 from typing import Optional
 import re
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 from WUBRG import FAILSAFE, get_color_identity, get_color_supersets
 from chat_bot.utils.settings import FORMAT_MAPPINGS, DEFAULT_FORMAT
@@ -12,8 +12,8 @@ class CardParseOptions:
     verbose_re = re.compile(r'([Vv]erbose ?|-[Vv])')
 
     # There should only be one of each of these.
-    start_re = re.compile(r'([Ss]tart|-[Ss])=([0-9][0-9]-[0-9][0-9]-[0-9][0-9])')
-    end_re = re.compile(r'([Ee]nd|-[Ee])=([0-9][0-9]-[0-9][0-9]-[0-9][0-9])')
+    start_re = re.compile(r'([Ss]tart|-[Ss])=((?:[0-9][0-9](?:[0-9][0-9])?-)?[0-9][0-9]-[0-9][0-9])')
+    end_re = re.compile(r'([Ee]nd|-[Ee])=((?:[0-9][0-9](?:[0-9][0-9])?-)?[0-9][0-9]-[0-9][0-9])')
 
     # There should likely only be one of any of these.
     month_re = re.compile(r'([Mm]onths?|-[Mm])=([0-9]*)')
@@ -52,6 +52,23 @@ class CardParseOptions:
         if self.VERBOSE:
             print("Verbose Mode enabled.")
 
+    @staticmethod
+    def _parse_date(date_str):
+        try:
+            date_lst = date_str.split('-')
+            if len(date_lst) == 2:
+                year = datetime.today().year
+                month, day = date_lst
+            else:
+                year, month, day = date_lst
+                if len(year) == 2:
+                    year = '20' + year
+
+            return date(int(year), int(month), int(day))
+        except Exception as e:
+            print(e)
+            return None
+
     def _handle_date_range(self):
         """ Handles self.START_DATE and self.END_DATE"""
         # Find the flags for start and end dates.
@@ -63,13 +80,12 @@ class CardParseOptions:
             print(f"end_match: {end_match is not None}")
 
         # If both a start or end date exists, use them for the range.
-        # TODO: Convert these to date objects.
         if start_match or end_match:
             # Set found values
             if start_match:
-                self.START_DATE = start_match.group(2)
+                self.START_DATE = self._parse_date(start_match.group(2))
             if end_match:
-                self.END_DATE = end_match.group(2)
+                self.END_DATE = self._parse_date(end_match.group(2))
         # If neither exist, check for a time offset flag.
         else:
             self.handle_time_offset()
@@ -159,8 +175,8 @@ class CardParseOptions:
 
 
 class CardParseData:
-    def __init__(self, card: dict, options: CardParseOptions):
-        self.OPTIONS = options
+    def __init__(self, card: dict, options: str):
+        self.OPTIONS = CardParseOptions(options)
         self.CARD_DATA = card
         self._fill_missing_options()
 
@@ -176,7 +192,7 @@ class CardParseData:
 
         if not self.OPTIONS.SET:
             # TODO: Search through the sets and find the most recent set in which the card was printed.
-            self.OPTIONS.SET = 'NEO'
+            self.OPTIONS.SET = self.CARD_DATA['set'].upper()
 
         if not self.OPTIONS.START_DATE:
             if self.OPTIONS.SET:
@@ -195,17 +211,6 @@ class MessageParseData:
     def __init__(self, cmd_str: str):
         """ :param cmd_str: The {{card_name | options}} style string. """
         self._cmd_str = cmd_str
-        self._options_text = None
-        self._card_name_list = []
-        self.OPTIONS = None
-        self.CARDS = []
-        self.CARD_CALLS = []
-
-        self._parse_options()
-        self._parse_cards()
-        self._gen_card_calls()
-
-    def _parse_options(self):
         # Attempt to find the options in the string.
         options_match = self.options_re.search(self._cmd_str)
 
@@ -214,11 +219,13 @@ class MessageParseData:
             self._options_text = options_match[1]
         else:
             self._options_text = ''
-        self.OPTIONS = CardParseOptions(self._options_text)
 
-        if self.OPTIONS.VERBOSE:
-            print(f'cmd_str: {self._cmd_str}')
-            print(f'options_text: {self._options_text}')
+        self._card_name_list = []
+        self.CARDS = []
+        self.CARD_CALLS = []
+
+        self._parse_cards()
+        self._gen_card_calls()
 
     def _parse_cards(self):
         # Attempt to find multiple card names in the query, separated by quotes.
@@ -228,9 +235,6 @@ class MessageParseData:
         if not self._card_name_list:
             self._card_name_list = self.single_card_re.findall(self._cmd_str)
 
-        if self.OPTIONS.VERBOSE:
-            print(f'card_name_list: {self._card_name_list}')
-
         # For each card name found, get the card from scryfall.
         for name in self._card_name_list:
             card = query_scryfall(name)
@@ -238,16 +242,14 @@ class MessageParseData:
                 self.CARDS.append(card)
 
     def _gen_card_calls(self):
+        # For each found card,
         for card in self.CARDS:
-            # TODO: Make a deep copy of options here.
-            options_copy = self.OPTIONS
-            card_call = CardParseData(card, options_copy)
-            self.CARD_CALLS.append(card_call)
+            self.CARD_CALLS.append(CardParseData(card, self._options_text))
 
 
 if __name__ == "__main__":
     test_strings = list()
-    test_strings.append('{{"Virus Beetle | -v -c=r,w,b,wubrg -w=2 set=KHM}}')
+    test_strings.append('{{"Virus Beetle" "Inkrise Infiltrator" | -v -c=r,w,b,wubrg set=KHM -s=2021-04-12 -e=04-16}}')
     for string in test_strings:
         card_parse = MessageParseData(string)
         for card_call in card_parse.CARD_CALLS:
