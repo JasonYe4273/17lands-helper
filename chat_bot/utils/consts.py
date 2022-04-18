@@ -33,3 +33,60 @@ STAT_FORMAT_STRINGS = {
     "GND WR": "`{:5.2f}%`",
     "IWD": "`{:5.2f}%`"
 }
+
+STAT_ALIASES: dict[str, str] = {
+    # 17Lands variable mapping
+    "name": "Name",
+    "color": "Color",
+    "rarity": "Rarity",
+    "seen_count": "# Seen",
+    "avg_seen": "ALSA",
+    "pick_count": "# Picked",
+    "avg_pick": "ATA",
+    "game_count": "# GP",
+    "win_rate": "GP WR",
+    "opening_hand_game_count": "# OH",
+    "opening_hand_win_rate": "OH WR",
+    "drawn_game_count": "# GD",
+    "drawn_win_rate": "GD WR",
+    "ever_drawn_game_count": "# GIH",
+    "ever_drawn_win_rate": "GIH WR",
+    "never_drawn_game_count": "# GND",
+    "never_drawn_win_rate": "GND WR",
+    "drawn_improvement_win_rate": "IWD",
+
+    # 17Lands variable shorthand mapping
+    "games": "# GP",
+    "winrate": "GP WR",
+    "opening_hand": "OH WR",
+    "drawn": "GD WR",
+    "ever_drawn": "GIH WR",
+    "never_drawn": "GND WR",
+    "drawn_improvement": "IWD",
+
+    # Lowercase mapping
+    "# seen": "# Seen",
+    "alsa": "ALSA",
+    "# picked": "# Picked",
+    "ata": "ATA",
+    "# gp": "# GP",
+    "gp wr": "GP WR",
+    "# oh": "# OH",
+    "oh wr": "OH WR",
+    "# gd": "# GD",
+    "gd wr": "GD WR",
+    "# gih": "# GIH",
+    "gih wr": "GIH WR",
+    "# gnd": "# GND",
+    "gnd wr": "GND WR",
+    "iwd": "IWD",
+
+    # Shorthand mapping
+    "seen": "# Seen",
+    "picked": "# Picked",
+    "gp": "GP WR",
+    "oh": "OH WR",
+    "gd": "GD WR",
+    "gih": "GIH WR",
+    "gnd": "GND WR",
+}

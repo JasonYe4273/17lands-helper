@@ -99,7 +99,7 @@ def get_color_string(s: str) -> str:
     :param s: The string to get colours from
     :return: 'WUBRGC' or a subset of 'WUBRG'
     """
-    s = s.upper()
+    s = s.strip().upper()
 
     if s.title() in COLOR_ALIASES:
         s = COLOR_ALIASES[s.title()]
@@ -110,8 +110,8 @@ def get_color_string(s: str) -> str:
     remainder = char_set - valid_chars
 
     if len(remainder) > 0:
-        print(f'Invalid color string provided: {s}. Converting to ""')
-        s = ""
+        print(f"Invalid color string provided: {s}. Converting to '{FAILSAFE}'")
+        s = FAILSAFE
 
     return s
 

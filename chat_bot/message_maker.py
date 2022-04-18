@@ -1,14 +1,19 @@
+import re
 from discord import TextChannel, Embed
 import requests
 from datetime import date, datetime, timedelta
 
 from WUBRG import get_color_identity
+from chat_bot.CardParseData import MessageParseData
 
 from chat_bot.utils.consts import COMMAND_STR, DATA_QUERY_L, DATA_QUERY_R, DATA_QUERY_MID, QUOTE_PAIRS
 from chat_bot.utils.settings import DEFAULT_FORMAT, START_DATE, DATA_COMMANDS, FORMAT_MAPPINGS, SETS
-from chat_bot.utils.utils import get_card_name
+from chat_bot.utils.utils import get_card_name, query_scryfall
 from chat_bot.embed_maker import gen_card_embed, supported_color_strings
 from chat_bot.DataCache import DataCache
+
+
+card_call_re = re.compile(r'({{.*?}})')
 
 
 async def send_embed_message(channel: TextChannel, embed: Embed) -> None:
@@ -49,40 +54,15 @@ async def handle_command(message: str, channel: TextChannel):
         await send_message(channel, '<https://github.com/JasonYe4273/17lands-helper>')
 
 
-def query_scryfall(raw_card_name):
-    # Try get unique card from Scryfall
-    try:
-        response = requests.get(f'https://api.scryfall.com/cards/named?fuzzy={raw_card_name}').json()
-        if response['object'] == 'error':
-            if response['details'][:20] == 'Too many cards match':
-                return {'error': f'Error: multiple card matches for "{raw_card_name}"'}
-            else:
-                return {'error': f'Error: cannot find card "{raw_card_name}"'}
-        else:
-            return response
-    except Exception:
-        return {'error': f'Error querying Scryfall for {raw_card_name}'}
-
-
-# TODO: Restructure this
-async def data_query(query: str, channel: TextChannel) -> None:
-    """
-    Handles a query for data sent by a user.
-    :param query: The found query from the user.
-    :param channel: The channel to send the query to.
-    """
-    print(f'Handling data query {query}')
-    separator = query.find(DATA_QUERY_MID)
-    card_query = query.strip() if separator == -1 else query[:separator].strip()
-    options_query = '' if separator == -1 else query[separator + 1:].strip()
-
+def get_requested_cards(card_query, channel):
     # Parse card names to the left of separator
     requested_cards = []
     rest = card_query
     old_rest = None
     while rest != '':
         if rest == old_rest:
-            await send_message(channel, 'Error: infinite loop while parsing card names')
+            pass
+            # await send_message(channel, 'Error: infinite loop while parsing card names')
             break
         else:
             old_rest = rest
@@ -100,11 +80,11 @@ async def data_query(query: str, channel: TextChannel) -> None:
                 raw_card_name = rest[:end]
                 rest = rest[end:].strip()
 
-        #card = CardManager.from_name(raw_card_name)
+        # card = CardManager.from_name(raw_card_name)
         #
-        #if card is None:
+        # if card is None:
         #    await send_message(channel, f'Error querying Scryfall for {raw_card_name}')
-        #else:
+        # else:
         #    requested_cards.append(card)
 
         # Try get unique card from Scryfall
@@ -112,8 +92,13 @@ async def data_query(query: str, channel: TextChannel) -> None:
         if 'error' not in response:
             requested_cards.append(response)
         else:
-            await send_message(channel, response['error'])
+            pass
+            # await send_message(channel, response['error'])
 
+    return requested_cards
+
+
+def get_option_params(options_query, requested_cards):
     options = options_query.split(' ')
 
     # Parse options to the right of separator
@@ -208,6 +193,26 @@ async def data_query(query: str, channel: TextChannel) -> None:
         start_date = START_DATE
         # result_description = f' up{result_description}'
 
+    cols = [(dc, dc_name) for (dc, dc_name, v) in data_commands.values() if not v]
+
+    return start_date, end_date, colors, sets, formats, can_use_cache, cols
+
+
+# TODO: Restructure this
+async def data_query(query: str, channel: TextChannel) -> None:
+    """
+    Handles a query for data sent by a user.
+    :param query: The found query from the user.
+    :param channel: The channel to send the query to.
+    """
+    print(f'Handling data query {query}')
+    separator = query.find(DATA_QUERY_MID)
+    card_query = query.strip() if separator == -1 else query[:separator].strip()
+    options_query = '' if separator == -1 else query[separator + 1:].strip()
+
+    requested_cards = get_requested_cards(card_query, channel)
+    start_date, end_date, colors, sets, formats, can_use_cache, cols = get_option_params(options_query, requested_cards)
+
     # Calculate 17lands query string
     query_str = f'&start_date={start_date}&end_date={end_date}'
     if colors is not None and colors != 'all':
@@ -251,11 +256,32 @@ async def data_query(query: str, channel: TextChannel) -> None:
                     set_code=s,
                     data=data_to_use,
                     formats=formats,
-                    fields=[(dc, dc_name) for (dc, dc_name, v) in data_commands.values() if not v],
+                    fields=cols,
                     start_date=start_date,
                     end_date=str(end_date),
                     color_filter=(None if colors == 'all' else colors)
                 ))
+
+
+async def handle_card_request_v2(message: str, channel: TextChannel) -> None:
+    match = card_call_re.findall(message)
+    for call in match:
+        card_parse = MessageParseData(call)
+        for card_call in card_parse.CARD_CALLS:
+
+            data_to_use = None
+            cols = None
+
+            await send_embed_message(channel, gen_card_embed(
+                card=card_call.CARD_DATA,
+                set_code=card_call.OPTIONS.SET,
+                data=data_to_use,
+                formats=card_call.OPTIONS.FORMATS,
+                fields=cols,
+                start_date=str(card_call.OPTIONS.START_DATE),
+                end_date=str(card_call.OPTIONS.END_DATE),
+                color_filter=card_call.OPTIONS.COLORS
+            ))
 
 
 async def handle_card_request(message: str, channel: TextChannel):
