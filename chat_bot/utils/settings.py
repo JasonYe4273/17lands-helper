@@ -1,6 +1,6 @@
-UPDATING_SETS: list[str] = ['NEO']
-OLD_SETS: list[str] = []  # ['DBL', 'VOW', 'MID', 'AFR', 'STX', 'KHM']
-SETS: list[str] = ['NEO']  # UPDATING_SETS + OLD_SETS
+UPDATING_SETS: list[str] = ['SNC']
+OLD_SETS: list[str] = ['NEO', 'DBL', 'VOW', 'MID', 'AFR', 'STX', 'KHM']
+SETS: list[str] = UPDATING_SETS + OLD_SETS
 START_DATE: str = '2019-01-01'
 DEFAULT_FORMAT: str = 'PremierDraft'
 
@@ -8,10 +8,10 @@ DEFAULT_FORMAT: str = 'PremierDraft'
 FORMATS: dict[str, list[str]] = {
     'PremierDraft': ['bo1', 'premier', 'premierdraft'],
     'TradDraft': ['bo3', 'trad', 'traditional', 'traddraft', 'traditionaldraft'],
-    #'QuickDraft': ['qd', 'quick', 'quickdraft'],
-    #'Sealed': ['sealed', 'bo1sealed', 'sealedbo1'],
-    #'TradSealed': ['tradsealed', 'bo3sealed', 'sealedbo3'],
-    #'DraftChallenge': ['challenge', 'draftchallenge'],
+    'QuickDraft': ['qd', 'quick', 'quickdraft'],
+    'Sealed': ['sealed', 'bo1sealed', 'sealedbo1'],
+    'TradSealed': ['tradsealed', 'bo3sealed', 'sealedbo3'],
+    'DraftChallenge': ['challenge', 'draftchallenge'],
 }
 
 FORMAT_MAPPINGS: dict[str, str] = {alias: name for name in FORMATS for alias in FORMATS[name]}
