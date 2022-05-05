@@ -46,7 +46,7 @@ async def on_ready() -> None:
     Set up for the bot, which happens when it is first loaded.
     """
     Manamoji.cache_manamojis(client)
-    #DataCache.fetch_data(OLD_SETS)
+    DataCache.fetch_data(OLD_SETS)
     ##for s in OLD_SETS:
     ##    mgr = SetManager(s, True, False)
     ##    mgr.check_for_updates()
