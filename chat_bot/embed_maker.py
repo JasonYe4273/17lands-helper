@@ -41,7 +41,7 @@ def new_data_embed(title: str, description: str = "", url: str = "") -> discord.
 
 
 def gen_card_embed(card: dict, set_code: str, data: dict, formats: list[str], fields: list[str],
-                   start_date: str, end_date: str, color_filter: str = None) -> discord.Embed:
+                   start_date: str, end_date: str, color_filter: str = "None") -> discord.Embed:
     """
     Returns an embed which displays the game stats about a particular card.
     :param card: The json of the card.
