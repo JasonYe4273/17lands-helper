@@ -93,6 +93,8 @@ async def send_card_call_response(card_call: CardParseData, channel: TextChannel
         use_cache = False
         colors = card_call.OPTIONS.COLORS[0]
 
+    print(f'{colors} {use_cache}')
+
     if not use_cache:
         # Calculate 17lands query string
         query_str = f'&start_date={str(card_call.OPTIONS.START_DATE)}&' \
