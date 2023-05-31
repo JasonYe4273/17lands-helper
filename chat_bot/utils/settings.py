@@ -1,5 +1,5 @@
-UPDATING_SETS: list[str] = ['HBG']
-OLD_SETS: list[str] = ['SNC', 'NEO', 'DBL', 'VOW', 'MID', 'AFR', 'STX', 'KHM']
+UPDATING_SETS: list[str] = ['MOM']
+OLD_SETS: list[str] = ['SIR','ONE','BRO','DMU','HBG','NEO', 'DBL', 'VOW', 'MID', 'AFR', 'STX', 'KHM']
 SETS: list[str] = UPDATING_SETS + OLD_SETS
 START_DATE: str = '2019-01-01'
 DEFAULT_FORMAT: str = 'PremierDraft'
