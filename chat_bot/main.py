@@ -1,4 +1,4 @@
-from discord import Client, Message
+from discord import Client, Message, Intents
 from discord.ext import tasks
 
 from chat_bot.utils.consts import COMMAND_STR, DATA_QUERY_L, DATA_QUERY_R
@@ -7,8 +7,7 @@ from chat_bot.Manamoji import Manamoji
 from chat_bot.message_maker import handle_card_request_v2, handle_command
 from chat_bot.DataCache import DataCache
 
-client: Client = Client()
-
+client: Client = Client(intents=Intents.default())
 
 @client.event
 async def on_message(message: Message) -> None:
@@ -19,6 +18,8 @@ async def on_message(message: Message) -> None:
     # Don't parse own messages
     if message.author == client.user:
         return
+
+    print('received message:' + message.content)
 
     # Handle data queries of the form '{{query | options}}'
     if (DATA_QUERY_L in message.content) and (DATA_QUERY_R in message.content):
@@ -57,9 +58,10 @@ def main():
     refresh_data.start()
     try:
         import os
+        #print(os.environ['TOKEN'])
         client.run(os.environ['TOKEN'])
     except KeyError:
-        # print("Critical Error! Could not load token from operating system.")
+        print("Critical Error! Could not load token from operating system.")
         # Temporarily let this run locally with my bot token, so I can
         # check that everything compiles properly. I'll make sure to
         # remove this later.
