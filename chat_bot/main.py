@@ -7,6 +7,8 @@ from chat_bot.Manamoji import Manamoji
 from chat_bot.message_maker import handle_card_request_v2, handle_command
 from chat_bot.DataCache import DataCache
 
+import asyncio
+
 client: Client = Client(intents=Intents.default())
 
 @client.event
@@ -55,10 +57,9 @@ async def on_ready() -> None:
 
 
 def main():
-    refresh_data.start()
+    asyncio.run(refresh_data())
     try:
         import os
-        #print(os.environ['TOKEN'])
         client.run(os.environ['TOKEN'])
     except KeyError:
         print("Critical Error! Could not load token from operating system.")
@@ -68,7 +69,6 @@ def main():
         #    -ZacharyN
         from LocalToken import TOKEN
         client.run(TOKEN)
-
 
 if __name__ == "__main__":
     main()
